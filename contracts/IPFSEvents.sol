@@ -1,6 +1,7 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.18;
+
 
 contract IPFSEvents {
-	event HashAdded(address PubKey, string IPFSHash, uint ttl);
-	event HashRemoved(address PubKey, string IPFSHash);
+    event HashAdded(address pubKey, string hashAdded, uint ttl);
+    event HashRemoved(address pubKey, string hashRemoved);
 }
