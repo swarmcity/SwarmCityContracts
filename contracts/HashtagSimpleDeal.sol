@@ -54,6 +54,7 @@ contract HashtagSimpleDeal is Ownable {
 		uint dealValue;
 		address provider;
 		address seeker;
+		string ipfsMetadata;
 	}
 
 	mapping(bytes32=>dealStruct) deals;
@@ -75,6 +76,9 @@ contract HashtagSimpleDeal is Ownable {
 
 	/// @dev ReceivedApproval - This event is fired when minime sends approval.
 	event ReceivedApproval(address owner,bytes extraData, uint amount);
+
+	/// @dev hashtagChanged - This event is fired when any of the metadata is changed.
+	event HashtagChanged(string _change);
 
 	/// @notice The function that creates the hashtag
 	function HashtagSimpleDeal(address _token, string _name, uint _commission, string _ipfsMetadataHash,
@@ -118,16 +122,19 @@ contract HashtagSimpleDeal is Ownable {
 	/// @notice The Hashtag owner can always update the payout address.
 	function setPayoutAddress(address _payoutaddress) onlyOwner {
 		payoutaddress = _payoutaddress;
+		HashtagChanged("Payout address changed");
 	}
 
 	/// @notice The Hashtag owner can always update the metadata for the hashtag.
 	function setMetadataHash(string _ipfsMetadataHash) onlyOwner {
 		metadataHash = _ipfsMetadataHash;
+		HashtagChanged("MetaData hash changed");
 	}
 
 	/// @notice The Hashtag owner can always change the commission amount
 	function setCommission(uint _newCommission) onlyOwner {
 		commission = _newCommission;
+		HashtagChanged("Commission amount changed");
 	}
 
 	/// @notice Read functions
@@ -180,7 +187,7 @@ contract HashtagSimpleDeal is Ownable {
 			deals[_dealhash].dealValue == 0);
 
 		// if it's funded - fill in the details
-		deals[_dealhash] = dealStruct(DealStatuses.Open,commission,_offerValue,0,dealowner);
+		deals[_dealhash] = dealStruct(DealStatuses.Open,commission,_offerValue,0,dealowner,_ipfsMetadata);
 
 		NewDealForTwo(dealowner,_dealhash,_ipfsMetadata, _offerValue, commission, totalValue);
 
@@ -313,7 +320,7 @@ contract HashtagSimpleDeal is Ownable {
 	function readDeal(bytes32 _dealhash)
 		constant returns(DealStatuses status, uint commissionValue,
 				uint dealValue, address provider){
-		return (deals[_dealhash].status,deals[_dealhash].commissionValue,deals[_dealhash].dealValue,deals[_dealhash].provider);
+		return (deals[_dealhash].status,deals[_dealhash].commissionValue,deals[_dealhash].dealValue,deals[_dealhash].provider,deals[_dealhash].ipfsMetadata);
 	}
 
 
