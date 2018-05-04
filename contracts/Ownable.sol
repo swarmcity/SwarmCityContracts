@@ -1,44 +1,41 @@
-pragma solidity ^0.4.15;
+pragma solidity ^0.4.11;
 
 
-/**
- * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
- * functions, this simplifies the implementation of "user permissions".
- */
-contract Ownable {
-  address public owner;
+/// @dev `Owned` is a base level contract that assigns an `owner` that can be
+///  later changed
+contract Owned {
+
+    /// @dev `owner` is the only address that can call a function with this
+    /// modifier
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
+
+    address public owner;
 
 
-  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    /// @notice The Constructor assigns the account deploying the contract to be
+    ///  the `owner`
+    function Owned() public {
+        owner = msg.sender;
+    }
 
+    address public newOwner;
 
-  /**
-   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
-   * account.
-   */
-  function Ownable() {
-    owner = msg.sender;
-  }
+    /// @notice `owner` can step down and assign some other address to this role
+    ///  but after this function is called the current owner still has ownership
+    ///  powers in this contract; change of ownership is a 2 step process
+    /// @param _newOwner The address of the new owner. A simple contract with
+    ///  the ability to accept ownership but the inability to do anything else
+    ///  can be used to create an unowned contract to achieve decentralization
+    function changeOwner(address _newOwner) public onlyOwner {
+        newOwner = _newOwner;
+    }
 
-
-  /**
-   * @dev Throws if called by any account other than the owner.
-   */
-  modifier onlyOwner() {
-    require(msg.sender == owner);
-    _;
-  }
-
-
-  /**
-   * @dev Allows the current owner to transfer control of the contract to a newOwner.
-   * @param newOwner The address to transfer ownership to.
-   */
-  function transferOwnership(address newOwner) onlyOwner public {
-    require(newOwner != address(0));
-    OwnershipTransferred(owner, newOwner);
-    owner = newOwner;
-  }
-
+    /// @notice `newOwner` can accept ownership over this contract
+    function acceptOwnership() public {
+        require(msg.sender == newOwner);
+        owner = newOwner;
+    }
 }

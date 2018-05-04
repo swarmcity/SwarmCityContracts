@@ -3,7 +3,7 @@ pragma solidity ^0.4.15;
 import './Ownable.sol';
 import "./IPFSEvents.sol";
 
-contract Parameters is IPFSEvents,Ownable {
+contract Parameters is IPFSEvents,Owned {
 	mapping (string => string) parameters;
 
 	event ParameterSet(string name, string value);

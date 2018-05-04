@@ -17,7 +17,7 @@ import './Ownable.sol';
 // CHANGE MINIME FOR SOMETHING SIMPLER - standard zeppelin - non transferrable tokens
 import './IMiniMeToken.sol';
 
-contract HashtagSimpleDeal is Ownable {
+contract HashtagSimpleDeal is Owned {
 	/// @param_name The human readable name of the hashtag
 	/// @param_commission The fixed hashtag fee in SWT
 	/// @param_token The SWT token
