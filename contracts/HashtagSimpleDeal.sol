@@ -13,6 +13,8 @@ pragma solidity ^0.4.15;
 	*/
 
 import './Ownable.sol';
+
+// CHANGE MINIME FOR SOMETHING SIMPLER - standard zeppelin - non transferrable tokens
 import './IMiniMeToken.sol';
 
 contract HashtagSimpleDeal is Ownable {
@@ -25,9 +27,9 @@ contract HashtagSimpleDeal is Ownable {
 	/// @param_metadataHash The IPFS hash metadata for this hashtag
 	string public name;
 	uint public commission;
-	IMiniMeToken token;
-	IMiniMeToken ProviderRep;
-	IMiniMeToken SeekerRep;
+	IMiniMeToken public token;
+	IMiniMeToken public ProviderRep;
+	IMiniMeToken public SeekerRep;
 	address public payoutaddress;
 	string public metadataHash;
 
@@ -137,65 +139,33 @@ contract HashtagSimpleDeal is Ownable {
 		HashtagChanged("Commission amount changed");
 	}
 
-	/// @notice Read functions
-	/// @notice getProviderRepTokenAddress
-	/// @return address ProviderRep
-	function getProviderRepTokenAddress()returns(address){
-		return address(ProviderRep);
-	}
-
-	/// @notice getSeekerRepTokenAddress
-	/// @return address SeekerRep
-	function getSeekerRepTokenAddress()returns(address){
-		return address(SeekerRep);
-	}
-
-	/// @notice getTokenAddress
-	/// @return address token
-	function getTokenAddress()returns(address){
-		return address(token);
-	}
-
-	/// @notice getConflictResolver
-	/// @return address owner
-	function getConflictResolver() returns(address){
-		return owner;
-	}
-
-	/// @notice getPayoutAddress
-	/// @return address payoutaddress
-	function getPayoutAddress() returns(address){
-		return payoutaddress;
-	}
-
 	/// @notice The Deal making stuff
 
 	/// @notice The create Deal function
-	function makeDealForTwo(bytes32 _dealhash, uint _offerValue, string _ipfsMetadata, uint8 _v, bytes32 _r, bytes32 _s) {
+	function makeDealForTwo(bytes32 _dealhash, uint _offerValue, string _ipfsMetadata) {
 		// make sure the owner of the deal is the one creating the deal
 		//require ();
 		// make sure there is enough to pay the commission later on
 		require (commission / 2 <= _offerValue);
-		address dealowner = ecrecover(_dealhash, _v, _r, _s);
 		// fund this deal
 		uint totalValue = _offerValue + commission / 2;
     require ( _offerValue + commission / 2 >= _offerValue); //overflow protection
-		require (token.transferFrom(dealowner,this, _offerValue + commission / 2));
+		require (token.transferFrom(msg.sender,this, _offerValue + commission / 2));
 
 		// if deal already exists don't allow to overwrite it
 		require (deals[_dealhash].commissionValue == 0 &&
 			deals[_dealhash].dealValue == 0);
 
 		// if it's funded - fill in the details
-		deals[_dealhash] = dealStruct(DealStatuses.Open,commission,_offerValue,0,dealowner,_ipfsMetadata);
+		deals[_dealhash] = dealStruct(DealStatuses.Open,commission,_offerValue,0x0,msg.sender,_ipfsMetadata);
 
-		NewDealForTwo(dealowner,_dealhash,_ipfsMetadata, _offerValue, commission, totalValue);
+		NewDealForTwo(msg.sender,_dealhash,_ipfsMetadata, _offerValue, commission, totalValue);
 
 	}
 
 	/// @notice The Cancel deal function
 	/// @notice Half of the hashtagfee is sent to payoutaddress
-	function cancelDeal(bytes32 _dealhash,string _ipfsMetadata){
+	function cancelDeal(bytes32 _dealhash){
 		dealStruct storage d = deals[_dealhash];
 		if (d.dealValue > 0 && d.provider == 0x0 && d.status == DealStatuses.Open)
 		{
@@ -207,12 +177,12 @@ contract HashtagSimpleDeal is Ownable {
 
 			deals[_dealhash].status = DealStatuses.Cancelled;
 
-			DealStatusChange(msg.sender,_dealhash,DealStatuses.Cancelled,_ipfsMetadata);
+			DealStatusChange(msg.sender,_dealhash,DealStatuses.Cancelled,deals[_dealhash].ipfsMetadata);
 		}
 	}
 
 	/// @notice seeker or provider can choose to dispute an ongoing deal
-	function dispute(bytes32 _dealhash,string _ipfsMetadata){
+	function dispute(bytes32 _dealhash){
 		dealStruct storage d = deals[_dealhash];
 		require (d.status == DealStatuses.Open);
 
@@ -228,11 +198,12 @@ contract HashtagSimpleDeal is Ownable {
 		}
 		/// @dev mark the deal as Disputed
 		deals[_dealhash].status = DealStatuses.Disputed;
-		DealStatusChange(d.seeker,_dealhash,DealStatuses.Disputed,_ipfsMetadata);
+
+		DealStatusChange(d.seeker,_dealhash,DealStatuses.Disputed,deals[_dealhash].ipfsMetadata);
 	}
 
 	/// @notice conflict resolver can resolve a disputed deal
-	function resolve(bytes32 _dealhash, uint _seekerFraction, string _ipfsMetadata){
+	function resolve(bytes32 _dealhash, uint _seekerFraction){
 		dealStruct storage d = deals[_dealhash];
 
 		/// @dev this function can only be called by the current payoutaddress of the hastag
@@ -259,12 +230,13 @@ contract HashtagSimpleDeal is Ownable {
 		require (token.transfer(d.provider,d.dealValue * 2 - _seekerFraction));
 
 		deals[_dealhash].status = DealStatuses.Resolved;
-		DealStatusChange(d.seeker,_dealhash,DealStatuses.Resolved,_ipfsMetadata);
+
+		DealStatusChange(d.seeker,_dealhash,DealStatuses.Resolved,deals[_dealhash].ipfsMetadata);
 
 	}
 
 	/// @notice Provider has to fund the deal
-	function fundDeal(string _dealid, address _dealowner,string _ipfsMetadata, address _provider){
+	function fundDeal(string _dealid){
 
 		bytes32 dealhash = sha3(_dealid);
 
@@ -278,16 +250,16 @@ contract HashtagSimpleDeal is Ownable {
 
 		/// @dev put the tokens from the provider on the deal
 		require (d.dealValue + d.commissionValue / 2 >= d.dealValue);
-		require (token.transferFrom(_provider,this,d.dealValue + d.commissionValue / 2));
+		require (token.transferFrom(d.seeker,this,d.dealValue + d.commissionValue / 2));
 
 		/// @dev fill in the address of the provider ( to payout the deal later on )
-		deals[dealhash].provider = _provider;
+		deals[dealhash].provider = msg.sender;
 
-		FundDeal(_provider, _dealowner, dealhash, _dealid);
+		FundDeal(msg.sender, d.seeker, dealhash, _dealid);
 	}
 
 	/// @notice The payout function can only be called by the deal owner.
-	function payout(bytes32 _dealhash, string _ipfsMetadata){
+	function payout(bytes32 _dealhash){
 
 		require(deals[_dealhash].seeker == msg.sender);
 
@@ -312,14 +284,14 @@ contract HashtagSimpleDeal is Ownable {
 
 		/// @dev mark the deal as done
 		deals[_dealhash].status = DealStatuses.Done;
-		DealStatusChange(d.seeker,_dealhash,DealStatuses.Done,_ipfsMetadata);
+		DealStatusChange(d.seeker,_dealhash,DealStatuses.Done,d.ipfsMetadata);
 
 	}
 
 	/// @notice Read the details of a deal
 	function readDeal(bytes32 _dealhash)
 		constant returns(DealStatuses status, uint commissionValue,
-				uint dealValue, address provider){
+				uint dealValue, address provider, string ipfsMetadata){
 		return (deals[_dealhash].status,deals[_dealhash].commissionValue,deals[_dealhash].dealValue,deals[_dealhash].provider,deals[_dealhash].ipfsMetadata);
 	}
 
