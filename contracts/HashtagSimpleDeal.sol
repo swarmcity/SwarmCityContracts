@@ -4,8 +4,8 @@ pragma solidity ^0.4.15;
   *  @title Simple Deal Hashtag
 	*  @dev Created in Swarm City anno 2017,
 	*  for the world, with love.
-	*  @description Symmetrical Escrow Deal Contract
-	*  @description This is the hashtag contract for creating Swarm City marketplaces.
+	*  description Symmetrical Escrow Deal Contract
+	*  description This is the hashtag contract for creating Swarm City marketplaces.
 	*  This contract is used in by the hashtagFactory to spawn new hashtags. It's a
 	*  MiniMe based contract, that holds the reputation balances,
 	*  and mint the reputation tokens.
@@ -84,7 +84,7 @@ contract HashtagSimpleDeal is Owned {
 
 	/// @notice The function that creates the hashtag
 	function HashtagSimpleDeal(address _token, string _name, uint _commission, string _ipfsMetadataHash,
-			address _ProviderRep, address _SeekerRep){
+			address _ProviderRep, address _SeekerRep) public {
 
 		/// @notice The name of the hashtag is set
 		name = _name;
@@ -116,25 +116,25 @@ contract HashtagSimpleDeal is Owned {
 			this,
 			_extraData
 	);*/
-	function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData)  {
+	function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData) public {
 		this.call(_extraData);
 		ReceivedApproval(_msgsender, _extraData, _amount);
 	}
 
 	/// @notice The Hashtag owner can always update the payout address.
-	function setPayoutAddress(address _payoutaddress) onlyOwner {
+	function setPayoutAddress(address _payoutaddress) public onlyOwner {
 		payoutaddress = _payoutaddress;
 		HashtagChanged("Payout address changed");
 	}
 
 	/// @notice The Hashtag owner can always update the metadata for the hashtag.
-	function setMetadataHash(string _ipfsMetadataHash) onlyOwner {
+	function setMetadataHash(string _ipfsMetadataHash ) public onlyOwner  {
 		metadataHash = _ipfsMetadataHash;
 		HashtagChanged("MetaData hash changed");
 	}
 
 	/// @notice The Hashtag owner can always change the commission amount
-	function setCommission(uint _newCommission) onlyOwner {
+	function setCommission(uint _newCommission) public onlyOwner {
 		commission = _newCommission;
 		HashtagChanged("Commission amount changed");
 	}
@@ -142,7 +142,7 @@ contract HashtagSimpleDeal is Owned {
 	/// @notice The Deal making stuff
 
 	/// @notice The create Deal function
-	function makeDealForTwo(bytes32 _dealhash, uint _offerValue, string _ipfsMetadata) {
+	function makeDealForTwo(bytes32 _dealhash, uint _offerValue, string _ipfsMetadata) public{
 		// make sure the owner of the deal is the one creating the deal
 		//require ();
 		// make sure there is enough to pay the commission later on
@@ -165,7 +165,7 @@ contract HashtagSimpleDeal is Owned {
 
 	/// @notice The Cancel deal function
 	/// @notice Half of the hashtagfee is sent to payoutaddress
-	function cancelDeal(bytes32 _dealhash){
+	function cancelDeal(bytes32 _dealhash) public {
 		dealStruct storage d = deals[_dealhash];
 		if (d.dealValue > 0 && d.provider == 0x0 && d.status == DealStatuses.Open)
 		{
@@ -182,7 +182,7 @@ contract HashtagSimpleDeal is Owned {
 	}
 
 	/// @notice seeker or provider can choose to dispute an ongoing deal
-	function dispute(bytes32 _dealhash){
+	function dispute(bytes32 _dealhash) public {
 		dealStruct storage d = deals[_dealhash];
 		require (d.status == DealStatuses.Open);
 
@@ -203,7 +203,7 @@ contract HashtagSimpleDeal is Owned {
 	}
 
 	/// @notice conflict resolver can resolve a disputed deal
-	function resolve(bytes32 _dealhash, uint _seekerFraction){
+	function resolve(bytes32 _dealhash, uint _seekerFraction) public {
 		dealStruct storage d = deals[_dealhash];
 
 		/// @dev this function can only be called by the current payoutaddress of the hastag
@@ -236,7 +236,7 @@ contract HashtagSimpleDeal is Owned {
 	}
 
 	/// @notice Provider has to fund the deal
-	function fundDeal(string _dealid){
+	function fundDeal(string _dealid) public {
 
 		bytes32 dealhash = sha3(_dealid);
 
@@ -259,7 +259,7 @@ contract HashtagSimpleDeal is Owned {
 	}
 
 	/// @notice The payout function can only be called by the deal owner.
-	function payout(bytes32 _dealhash){
+	function payout(bytes32 _dealhash) public {
 
 		require(deals[_dealhash].seeker == msg.sender);
 
@@ -290,7 +290,7 @@ contract HashtagSimpleDeal is Owned {
 
 	/// @notice Read the details of a deal
 	function readDeal(bytes32 _dealhash)
-		constant returns(DealStatuses status, uint commissionValue,
+		constant public returns(DealStatuses status, uint commissionValue,
 				uint dealValue, address provider, string ipfsMetadata){
 		return (deals[_dealhash].status,deals[_dealhash].commissionValue,deals[_dealhash].dealValue,deals[_dealhash].provider,deals[_dealhash].ipfsMetadata);
 	}
