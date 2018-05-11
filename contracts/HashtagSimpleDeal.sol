@@ -1,4 +1,4 @@
-pragma solidity ^0.4.15;
+pragma solidity ^0.4.23;
 
 /**
   *  @title Simple Deal Hashtag
@@ -12,12 +12,10 @@ pragma solidity ^0.4.15;
 	*  This contract makes a specific kind of deals called "SimpleDeals"
 	*/
 
-import './Ownable.sol';
-
-// CHANGE MINIME FOR SOMETHING SIMPLER - standard zeppelin - non transferrable tokens
 import './IMiniMeToken.sol';
+import './DetailedERC20.sol';
 
-contract HashtagSimpleDeal is Owned {
+contract HashtagSimpleDeal is Ownable {
 	/// @param_name The human readable name of the hashtag
 	/// @param_commission The fixed hashtag fee in SWT
 	/// @param_token The SWT token
@@ -28,8 +26,8 @@ contract HashtagSimpleDeal is Owned {
 	string public name;
 	uint public commission;
 	IMiniMeToken public token;
-	IMiniMeToken public ProviderRep;
-	IMiniMeToken public SeekerRep;
+	DetailedERC20 public ProviderRep;
+	DetailedERC20 public SeekerRep;
 	address public payoutaddress;
 	string public metadataHash;
 
@@ -54,6 +52,8 @@ contract HashtagSimpleDeal is Owned {
 		DealStatuses status;
 		uint commissionValue;
 		uint dealValue;
+		uint providerRep;
+		uint seekerRep;
 		address provider;
 		address seeker;
 		string ipfsMetadata;
@@ -83,17 +83,16 @@ contract HashtagSimpleDeal is Owned {
 	event HashtagChanged(string _change);
 
 	/// @notice The function that creates the hashtag
-	function HashtagSimpleDeal(address _token, string _name, uint _commission, string _ipfsMetadataHash,
-			address _ProviderRep, address _SeekerRep) public {
+	constructor(address _token, string _name, uint _commission, string _ipfsMetadataHash) public {
 
 		/// @notice The name of the hashtag is set
 		name = _name;
 
-		/// @notice The provider reputation token is created
-		ProviderRep = IMiniMeToken(_ProviderRep);
-
 		/// @notice The seeker reputation token is created
-		SeekerRep = IMiniMeToken(_SeekerRep);
+		SeekerRep = new DetailedERC20("SWR as a Seeker","SWR", 0);
+		
+		/// @notice The provider reputation token is created
+		ProviderRep = new DetailedERC20("SWR as a Provider","SWR", 0);
 
 		/// @notice SWT token is added
 		token = IMiniMeToken(_token);
@@ -109,57 +108,67 @@ contract HashtagSimpleDeal is Owned {
 		payoutaddress = msg.sender;
 	}
 
-	/// @notice the approval function that is triggered by the tokencontract
-	/*ApproveAndCallFallBack(_spender).receiveApproval(
-			msg.sender,
-			_amount,
-			this,
-			_extraData
-	);*/
 	function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData) public {
 		this.call(_extraData);
-		ReceivedApproval(_msgsender, _extraData, _amount);
+		emit ReceivedApproval(_msgsender, _extraData, _amount);
 	}
 
 	/// @notice The Hashtag owner can always update the payout address.
 	function setPayoutAddress(address _payoutaddress) public onlyOwner {
 		payoutaddress = _payoutaddress;
-		HashtagChanged("Payout address changed");
+		emit HashtagChanged("Payout address changed");
 	}
 
 	/// @notice The Hashtag owner can always update the metadata for the hashtag.
 	function setMetadataHash(string _ipfsMetadataHash ) public onlyOwner  {
 		metadataHash = _ipfsMetadataHash;
-		HashtagChanged("MetaData hash changed");
+		emit HashtagChanged("MetaData hash changed");
 	}
 
 	/// @notice The Hashtag owner can always change the commission amount
 	function setCommission(uint _newCommission) public onlyOwner {
 		commission = _newCommission;
-		HashtagChanged("Commission amount changed");
+		emit HashtagChanged("Commission amount changed");
 	}
 
 	/// @notice The Deal making stuff
 
 	/// @notice The create Deal function
 	function makeDealForTwo(bytes32 _dealhash, uint _offerValue, string _ipfsMetadata) public{
-		// make sure the owner of the deal is the one creating the deal
-		//require ();
+
 		// make sure there is enough to pay the commission later on
 		require (commission / 2 <= _offerValue);
+		
 		// fund this deal
 		uint totalValue = _offerValue + commission / 2;
-    require ( _offerValue + commission / 2 >= _offerValue); //overflow protection
-		require (token.transferFrom(msg.sender,this, _offerValue + commission / 2));
+		
+        require ( _offerValue + commission / 2 >= _offerValue); //overflow protection
 
 		// if deal already exists don't allow to overwrite it
-		require (deals[_dealhash].commissionValue == 0 &&
-			deals[_dealhash].dealValue == 0);
+		require (deals[_dealhash].commissionValue == 0 && deals[_dealhash].dealValue == 0);
+
+		require (token.transferFrom(msg.sender,this, _offerValue + commission / 2));
 
 		// if it's funded - fill in the details
-		deals[_dealhash] = dealStruct(DealStatuses.Open,commission,_offerValue,0x0,msg.sender,_ipfsMetadata);
+		deals[_dealhash] = dealStruct(DealStatuses.Open,
+    		commission,
+    		_offerValue,
+    		0,
+    		SeekerRep.balanceOf(msg.sender),
+    		0x0,
+    		msg.sender,
+    		_ipfsMetadata);
+    
+    		DealStatuses status;
+		uint commissionValue;
+		uint dealValue;
+		uint providerRep;
+		uint seekerRep;
+		address provider;
+		address seeker;
+		string ipfsMetadata;
 
-		NewDealForTwo(msg.sender,_dealhash,_ipfsMetadata, _offerValue, commission, totalValue);
+        emit NewDealForTwo(msg.sender,_dealhash,_ipfsMetadata, _offerValue, commission, totalValue);
 
 	}
 
@@ -177,7 +186,7 @@ contract HashtagSimpleDeal is Owned {
 
 			deals[_dealhash].status = DealStatuses.Cancelled;
 
-			DealStatusChange(msg.sender,_dealhash,DealStatuses.Cancelled,deals[_dealhash].ipfsMetadata);
+			emit DealStatusChange(msg.sender,_dealhash,DealStatuses.Cancelled,deals[_dealhash].ipfsMetadata);
 		}
 	}
 
@@ -199,7 +208,7 @@ contract HashtagSimpleDeal is Owned {
 		/// @dev mark the deal as Disputed
 		deals[_dealhash].status = DealStatuses.Disputed;
 
-		DealStatusChange(d.seeker,_dealhash,DealStatuses.Disputed,deals[_dealhash].ipfsMetadata);
+		emit DealStatusChange(d.seeker,_dealhash,DealStatuses.Disputed,deals[_dealhash].ipfsMetadata);
 	}
 
 	/// @notice conflict resolver can resolve a disputed deal
@@ -231,14 +240,14 @@ contract HashtagSimpleDeal is Owned {
 
 		deals[_dealhash].status = DealStatuses.Resolved;
 
-		DealStatusChange(d.seeker,_dealhash,DealStatuses.Resolved,deals[_dealhash].ipfsMetadata);
+		emit DealStatusChange(d.seeker,_dealhash,DealStatuses.Resolved,deals[_dealhash].ipfsMetadata);
 
 	}
 
 	/// @notice Provider has to fund the deal
 	function fundDeal(string _dealid) public {
 
-		bytes32 dealhash = sha3(_dealid);
+		bytes32 dealhash = keccak256(_dealid);
 
 		dealStruct storage d = deals[dealhash];
 
@@ -254,8 +263,9 @@ contract HashtagSimpleDeal is Owned {
 
 		/// @dev fill in the address of the provider ( to payout the deal later on )
 		deals[dealhash].provider = msg.sender;
+        deals[dealhash].providerRep = ProviderRep.balanceOf(msg.sender);
 
-		FundDeal(msg.sender, d.seeker, dealhash, _dealid);
+		emit FundDeal(msg.sender, d.seeker, dealhash, _dealid);
 	}
 
 	/// @notice The payout function can only be called by the deal owner.
@@ -275,25 +285,39 @@ contract HashtagSimpleDeal is Owned {
 		require (token.transfer(d.provider,d.dealValue * 2));
 
 		/// @dev mint REP for Provider
-		ProviderRep.generateTokens(d.provider, 5);
-		ProviderRepAdded(d.provider, 5);
+		ProviderRep.mint(d.provider, 5);
+		emit ProviderRepAdded(d.provider, 5);
 
 		/// @dev mint REP for Seeker
-		SeekerRep.generateTokens(d.seeker, 5);
-		SeekerRepAdded(d.seeker, 5);
+		SeekerRep.mint(d.seeker, 5);
+		emit SeekerRepAdded(d.seeker, 5);
 
 		/// @dev mark the deal as done
 		deals[_dealhash].status = DealStatuses.Done;
-		DealStatusChange(d.seeker,_dealhash,DealStatuses.Done,d.ipfsMetadata);
+		emit DealStatusChange(d.seeker,_dealhash,DealStatuses.Done,d.ipfsMetadata);
 
 	}
 
 	/// @notice Read the details of a deal
 	function readDeal(bytes32 _dealhash)
-		constant public returns(DealStatuses status, uint commissionValue,
-				uint dealValue, address provider, string ipfsMetadata){
-		return (deals[_dealhash].status,deals[_dealhash].commissionValue,deals[_dealhash].dealValue,deals[_dealhash].provider,deals[_dealhash].ipfsMetadata);
+		constant public returns(
+		    DealStatuses status, 
+		    uint commissionValue,
+			uint dealValue,
+			uint providerRep,
+		    uint seekerRep,
+			address provider,
+			address seeker,
+			string ipfsMetadata)
+	{
+		return (
+		    deals[_dealhash].status,
+		    deals[_dealhash].commissionValue,
+		    deals[_dealhash].dealValue,
+		    deals[_dealhash].providerRep,
+		    deals[_dealhash].seekerRep,
+		    deals[_dealhash].provider,
+			deals[_dealhash].seeker,
+		    deals[_dealhash].ipfsMetadata);
 	}
-
-
 }
