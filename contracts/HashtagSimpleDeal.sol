@@ -13,18 +13,18 @@ pragma solidity ^0.4.23;
 	*/
 
 import './IMiniMeToken.sol';
-import './DetailedERC20.sol';
+import './RepToken/DetailedERC20.sol';
 
 contract HashtagSimpleDeal is Ownable {
 	/// @param_name The human readable name of the hashtag
-	/// @param_commission The fixed hashtag fee in SWT
+	/// @param_hashtagFee The fixed hashtag fee in SWT
 	/// @param_token The SWT token
 	/// @param_ProviderRep The rep token that is minted for the Provider
 	/// @param_SeekerRep The rep token that is minted for the Seeker
-	/// @param_payoutaddress The address where the commission is sent.
+	/// @param_payoutaddress The address where the hashtag fee is sent.
 	/// @param_metadataHash The IPFS hash metadata for this hashtag
 	string public name;
-	uint public commission;
+	uint public hashtagFee;
 	IMiniMeToken public token;
 	DetailedERC20 public ProviderRep;
 	DetailedERC20 public SeekerRep;
@@ -43,14 +43,14 @@ contract HashtagSimpleDeal is Ownable {
 	/// @param_dealStruct The deal object.
 	/// @param_status Coming from DealStatuses enum.
 	/// Statuses: Open, Done, Disputed, Resolved, Cancelled
-	/// @param_commissionValue The value of the hashtag commission is stored in the deal. This prevents the hashtagmaintainer to influence an existing deal when changing the hashtagcommission fee.
+	/// @param_hashtagFee The value of the hashtag fee is stored in the deal. This prevents the hashtagmaintainer to influence an existing deal when changing the hashtag fee.
 	/// @param_dealValue The value of the deal (SWT)
 	/// @param_provider The address of the provider
 	/// @param_deals Array of deals made by this hashtag
 
 	struct dealStruct {
 		DealStatuses status;
-		uint commissionValue;
+		uint fee;
 		uint dealValue;
 		uint providerRep;
 		uint seekerRep;
@@ -68,7 +68,7 @@ contract HashtagSimpleDeal is Ownable {
 	event SeekerRepAdded(address to, uint amount);
 
 	/// @dev Event NewDealForTwo - This event is fired when a new deal for two is created.
-	event NewDealForTwo(address owner,bytes32 dealhash, string ipfsMetadata, uint offerValue, uint commission, uint totalValue);
+	event NewDealForTwo(address owner,bytes32 dealhash, string ipfsMetadata, uint offerValue, uint hashtagFee, uint totalValue);
 
 	/// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
 	event FundDeal(address provider,address owner, bytes32 dealhash,string ipfsMetadata);
@@ -83,7 +83,7 @@ contract HashtagSimpleDeal is Ownable {
 	event HashtagChanged(string _change);
 
 	/// @notice The function that creates the hashtag
-	constructor(address _token, string _name, uint _commission, string _ipfsMetadataHash) public {
+	constructor(address _token, string _name, uint _hashtagFee, string _ipfsMetadataHash) public {
 
 		/// @notice The name of the hashtag is set
 		name = _name;
@@ -100,10 +100,10 @@ contract HashtagSimpleDeal is Ownable {
 		/// Metadata added
 		metadataHash = _ipfsMetadataHash;
 
-		/// Commission is set to ...
-		commission = _commission;
+		/// hashtag fee is set to ...
+		hashtagFee = _hashtagFee;
 
-		/// Commission payout address is set
+		/// Hashtag fee payout address is set
 		/// First time we set it to msg.sender
 		payoutaddress = msg.sender;
 	}
@@ -125,10 +125,10 @@ contract HashtagSimpleDeal is Ownable {
 		emit HashtagChanged("MetaData hash changed");
 	}
 
-	/// @notice The Hashtag owner can always change the commission amount
-	function setCommission(uint _newCommission) public onlyOwner {
-		commission = _newCommission;
-		emit HashtagChanged("Commission amount changed");
+	/// @notice The Hashtag owner can always change the hashtag fee amount
+	function setHashtagFee(uint _newHashtagFee) public onlyOwner {
+		hashtagFee = _newHashtagFee;
+		emit HashtagChanged("Hashtag fee amount changed");
 	}
 
 	/// @notice The Deal making stuff
@@ -136,22 +136,22 @@ contract HashtagSimpleDeal is Ownable {
 	/// @notice The create Deal function
 	function makeDealForTwo(bytes32 _dealhash, uint _offerValue, string _ipfsMetadata) public{
 
-		// make sure there is enough to pay the commission later on
-		require (commission / 2 <= _offerValue);
+		// make sure there is enough to pay the hashtag fee later on
+		require (hashtagFee / 2 <= _offerValue);
 		
 		// fund this deal
-		uint totalValue = _offerValue + commission / 2;
+		uint totalValue = _offerValue + hashtagFee / 2;
 		
-        require ( _offerValue + commission / 2 >= _offerValue); //overflow protection
+        require ( _offerValue + hashtagFee / 2 >= _offerValue); //overflow protection
 
 		// if deal already exists don't allow to overwrite it
-		require (deals[_dealhash].commissionValue == 0 && deals[_dealhash].dealValue == 0);
+		require (deals[_dealhash].fee == 0 && deals[_dealhash].dealValue == 0);
 
-		require (token.transferFrom(msg.sender,this, _offerValue + commission / 2));
+		require (token.transferFrom(msg.sender,this, _offerValue + hashtagFee / 2));
 
 		// if it's funded - fill in the details
 		deals[_dealhash] = dealStruct(DealStatuses.Open,
-    		commission,
+    		hashtagFee,
     		_offerValue,
     		0,
     		SeekerRep.balanceOf(msg.sender),
@@ -160,15 +160,8 @@ contract HashtagSimpleDeal is Ownable {
     		_ipfsMetadata);
     
     		DealStatuses status;
-		uint commissionValue;
-		uint dealValue;
-		uint providerRep;
-		uint seekerRep;
-		address provider;
-		address seeker;
-		string ipfsMetadata;
 
-        emit NewDealForTwo(msg.sender,_dealhash,_ipfsMetadata, _offerValue, commission, totalValue);
+        emit NewDealForTwo(msg.sender,_dealhash,_ipfsMetadata, _offerValue, hashtagFee, totalValue);
 
 	}
 
@@ -179,7 +172,7 @@ contract HashtagSimpleDeal is Ownable {
 		if (d.dealValue > 0 && d.provider == 0x0 && d.status == DealStatuses.Open)
 		{
 			// @dev if you cancel the deal you pay the hashtagfee / 2
-			require (token.transfer(payoutaddress,d.commissionValue / 2));
+			require (token.transfer(payoutaddress,d.fee / 2));
 
 			// @dev cancel this Deal
 			require (token.transfer(d.seeker,d.dealValue));
@@ -222,15 +215,15 @@ contract HashtagSimpleDeal is Ownable {
 		/// @dev only disputed deals can be resolved
 		require (d.status == DealStatuses.Disputed) ;
 
-		/// @dev pay out commission
-		require (token.transfer(payoutaddress,d.commissionValue));
+		/// @dev pay out hashtagFee
+		require (token.transfer(payoutaddress,d.fee));
 
 		/// @dev send the seeker fraction back to the dealowner
 		require (token.transfer(d.seeker,_seekerFraction));
 		//seekerfraction = 4
 
 		/// @dev what the seeker is asking for cannot be more than what he offered
-		require(_seekerFraction <= d.dealValue - d.commissionValue/2);
+		require(_seekerFraction <= d.dealValue - d.fee/2);
 
 		/// @dev check
 		require(d.dealValue * 2 - _seekerFraction <= d.dealValue * 2);
@@ -258,8 +251,8 @@ contract HashtagSimpleDeal is Ownable {
 		require (d.provider == 0x0);
 
 		/// @dev put the tokens from the provider on the deal
-		require (d.dealValue + d.commissionValue / 2 >= d.dealValue);
-		require (token.transferFrom(d.seeker,this,d.dealValue + d.commissionValue / 2));
+		require (d.dealValue + d.fee / 2 >= d.dealValue);
+		require (token.transferFrom(d.seeker,this,d.dealValue + d.fee / 2));
 
 		/// @dev fill in the address of the provider ( to payout the deal later on )
 		deals[dealhash].provider = msg.sender;
@@ -278,8 +271,8 @@ contract HashtagSimpleDeal is Ownable {
 		/// @dev you can only payout open deals
 		require (d.status == DealStatuses.Open);
 
-		/// @dev pay out commission
-		require (token.transfer(payoutaddress,d.commissionValue));
+		/// @dev pay out hashtagFee
+		require (token.transfer(payoutaddress,d.fee));
 
 		/// @dev pay out the provider
 		require (token.transfer(d.provider,d.dealValue * 2));
@@ -302,22 +295,20 @@ contract HashtagSimpleDeal is Ownable {
 	function readDeal(bytes32 _dealhash)
 		constant public returns(
 		    DealStatuses status, 
-		    uint commissionValue,
+		    uint fee,
 			uint dealValue,
 			uint providerRep,
 		    uint seekerRep,
 			address provider,
-			address seeker,
 			string ipfsMetadata)
 	{
 		return (
 		    deals[_dealhash].status,
-		    deals[_dealhash].commissionValue,
+		    deals[_dealhash].fee,
 		    deals[_dealhash].dealValue,
 		    deals[_dealhash].providerRep,
 		    deals[_dealhash].seekerRep,
 		    deals[_dealhash].provider,
-			deals[_dealhash].seeker,
 		    deals[_dealhash].ipfsMetadata);
 	}
 }
