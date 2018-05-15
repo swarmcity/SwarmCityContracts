@@ -1,5 +1,5 @@
 {
-  "name": "sc-gasstation",
+  "name": "swarmcity-smartcontracts",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "solcpiler" : "solcpiler --solc-version v0.4.23+commit.124ca40d -i ./contracts/HashtagSimpleDeal.sol && solcpiler --solc-version v0.4.23+commit.124ca40d -i ./contracts/MiniMeToken/MiniMeToken.sol && solcpiler --solc-version v0.4.23+commit.124ca40d -i ./contracts/HashtagProxy/HashtagProxy.sol",
     "browserify": "browserify utility.js --standalone utility > gs-client/utility.js && browserify node_modules/keythereum/index.js --standalone keythereum > gs-client/keythereum.js"
   },
   "repository": {

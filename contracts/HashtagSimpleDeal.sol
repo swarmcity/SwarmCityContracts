@@ -89,10 +89,10 @@ contract HashtagSimpleDeal is Ownable {
 		name = _name;
 
 		/// @notice The seeker reputation token is created
-		SeekerRep = new DetailedERC20("SWR as a Seeker","SWR", 0);
+		SeekerRep = new DetailedERC20("SeekerRep","SWRS", 0);
 		
 		/// @notice The provider reputation token is created
-		ProviderRep = new DetailedERC20("SWR as a Provider","SWR", 0);
+		ProviderRep = new DetailedERC20("ProviderRep","SWRP", 0);
 
 		/// @notice SWT token is added
 		token = IMiniMeToken(_token);
@@ -159,8 +159,6 @@ contract HashtagSimpleDeal is Ownable {
     		msg.sender,
     		_ipfsMetadata);
     
-    		DealStatuses status;
-
         emit NewDealForTwo(msg.sender,_dealhash,_ipfsMetadata, _offerValue, hashtagFee, totalValue);
 
 	}
