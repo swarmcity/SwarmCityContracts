@@ -77,7 +77,7 @@ contract HashtagSimpleDeal is Ownable {
 	event DealStatusChange(address owner,bytes32 dealhash,DealStatuses newstatus,string ipfsMetadata);
 
 	/// @dev ReceivedApproval - This event is fired when minime sends approval.
-	event ReceivedApproval(address owner,bytes extraData, uint amount);
+	event ReceivedApproval(address sender, uint amount, address fromcontract, bytes extraData);
 
 	/// @dev hashtagChanged - This event is fired when any of the metadata is changed.
 	event HashtagChanged(string _change);
@@ -109,8 +109,8 @@ contract HashtagSimpleDeal is Ownable {
 	}
 
 	function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData) public {
-		this.call(_extraData);
-		emit ReceivedApproval(_msgsender, _extraData, _amount);
+		require(address(this).call(_extraData));
+		emit ReceivedApproval( _msgsender,  _amount,  _fromcontract, _extraData);
 	}
 
 	/// @notice The Hashtag owner can always update the payout address.
@@ -134,11 +134,19 @@ contract HashtagSimpleDeal is Ownable {
 	/// @notice The Deal making stuff
 
 	/// @notice The create Deal function
-	function makeDealForTwo(bytes32 _dealhash, uint _offerValue, string _ipfsMetadata) public{
+	function makeDealForTwo(
+		bytes32 _dealhash, 
+		uint _offerValue, 
+		string _ipfsMetadata,
+		uint8 _v,
+		bytes32 _r,
+		bytes32 _s
+    ) public {
 
 		// make sure there is enough to pay the hashtag fee later on
 		require (hashtagFee / 2 <= _offerValue);
 		
+		address dealowner = ecrecover(_dealhash, _v, _r, _s);
 		// fund this deal
 		uint totalValue = _offerValue + hashtagFee / 2;
 		
@@ -147,19 +155,19 @@ contract HashtagSimpleDeal is Ownable {
 		// if deal already exists don't allow to overwrite it
 		require (deals[_dealhash].fee == 0 && deals[_dealhash].dealValue == 0);
 
-		require (token.transferFrom(msg.sender,this, _offerValue + hashtagFee / 2));
+		require (token.transferFrom(dealowner,this, _offerValue + hashtagFee / 2));
 
 		// if it's funded - fill in the details
 		deals[_dealhash] = dealStruct(DealStatuses.Open,
     		hashtagFee,
     		_offerValue,
     		0,
-    		SeekerRep.balanceOf(msg.sender),
+    		SeekerRep.balanceOf(dealowner),
     		0x0,
-    		msg.sender,
+    		dealowner,
     		_ipfsMetadata);
     
-        emit NewDealForTwo(msg.sender,_dealhash,_ipfsMetadata, _offerValue, hashtagFee, totalValue);
+        emit NewDealForTwo(dealowner,_dealhash,_ipfsMetadata, _offerValue, hashtagFee, totalValue);
 
 	}
 
