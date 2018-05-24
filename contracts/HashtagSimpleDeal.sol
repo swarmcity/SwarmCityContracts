@@ -50,7 +50,7 @@ contract HashtagSimpleDeal is Ownable {
 
 	struct dealStruct {
 		DealStatuses status;
-		uint fee;
+		uint hashtagFee;
 		uint dealValue;
 		uint providerRep;
 		uint seekerRep;
@@ -68,7 +68,7 @@ contract HashtagSimpleDeal is Ownable {
 	event SeekerRepAdded(address to, uint amount);
 
 	/// @dev Event NewDealForTwo - This event is fired when a new deal for two is created.
-	event NewDealForTwo(address owner,bytes32 dealhash, string ipfsMetadata, uint offerValue, uint hashtagFee, uint totalValue);
+	event NewDealForTwo(address owner,bytes32 dealhash, string ipfsMetadata, uint offerValue, uint hashtagFee, uint totalValue, uint seekerRep);
 
 	/// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
 	event FundDeal(address provider,address owner, bytes32 dealhash,string ipfsMetadata);
@@ -153,7 +153,7 @@ contract HashtagSimpleDeal is Ownable {
         require ( _offerValue + hashtagFee / 2 >= _offerValue); //overflow protection
 
 		// if deal already exists don't allow to overwrite it
-		require (deals[_dealhash].fee == 0 && deals[_dealhash].dealValue == 0);
+		require (deals[_dealhash].hashtagFee == 0 && deals[_dealhash].dealValue == 0);
 
 		require (token.transferFrom(dealowner,this, _offerValue + hashtagFee / 2));
 
@@ -167,7 +167,7 @@ contract HashtagSimpleDeal is Ownable {
     		dealowner,
     		_ipfsMetadata);
     
-        emit NewDealForTwo(dealowner,_dealhash,_ipfsMetadata, _offerValue, hashtagFee, totalValue);
+        emit NewDealForTwo(dealowner,_dealhash,_ipfsMetadata, _offerValue, hashtagFee, totalValue, SeekerRep.balanceOf(dealowner));
 
 	}
 
@@ -178,7 +178,7 @@ contract HashtagSimpleDeal is Ownable {
 		if (d.dealValue > 0 && d.provider == 0x0 && d.status == DealStatuses.Open)
 		{
 			// @dev if you cancel the deal you pay the hashtagfee / 2
-			require (token.transfer(payoutaddress,d.fee / 2));
+			require (token.transfer(payoutaddress,d.hashtagFee / 2));
 
 			// @dev cancel this Deal
 			require (token.transfer(d.seeker,d.dealValue));
@@ -222,14 +222,14 @@ contract HashtagSimpleDeal is Ownable {
 		require (d.status == DealStatuses.Disputed) ;
 
 		/// @dev pay out hashtagFee
-		require (token.transfer(payoutaddress,d.fee));
+		require (token.transfer(payoutaddress,d.hashtagFee));
 
 		/// @dev send the seeker fraction back to the dealowner
 		require (token.transfer(d.seeker,_seekerFraction));
 		//seekerfraction = 4
 
 		/// @dev what the seeker is asking for cannot be more than what he offered
-		require(_seekerFraction <= d.dealValue - d.fee/2);
+		require(_seekerFraction <= d.dealValue - d.hashtagFee/2);
 
 		/// @dev check
 		require(d.dealValue * 2 - _seekerFraction <= d.dealValue * 2);
@@ -257,8 +257,8 @@ contract HashtagSimpleDeal is Ownable {
 		require (d.provider == 0x0);
 
 		/// @dev put the tokens from the provider on the deal
-		require (d.dealValue + d.fee / 2 >= d.dealValue);
-		require (token.transferFrom(d.seeker,this,d.dealValue + d.fee / 2));
+		require (d.dealValue + d.hashtagFee / 2 >= d.dealValue);
+		require (token.transferFrom(d.seeker,this,d.dealValue + d.hashtagFee / 2));
 
 		/// @dev fill in the address of the provider ( to payout the deal later on )
 		deals[dealhash].provider = msg.sender;
@@ -278,7 +278,7 @@ contract HashtagSimpleDeal is Ownable {
 		require (d.status == DealStatuses.Open);
 
 		/// @dev pay out hashtagFee
-		require (token.transfer(payoutaddress,d.fee));
+		require (token.transfer(payoutaddress,d.hashtagFee));
 
 		/// @dev pay out the provider
 		require (token.transfer(d.provider,d.dealValue * 2));
@@ -301,7 +301,7 @@ contract HashtagSimpleDeal is Ownable {
 	function readDeal(bytes32 _dealhash)
 		constant public returns(
 		    DealStatuses status, 
-		    uint fee,
+		    uint hashtagFee,
 			uint dealValue,
 			uint providerRep,
 		    uint seekerRep,
@@ -310,7 +310,7 @@ contract HashtagSimpleDeal is Ownable {
 	{
 		return (
 		    deals[_dealhash].status,
-		    deals[_dealhash].fee,
+		    deals[_dealhash].hashtagFee,
 		    deals[_dealhash].dealValue,
 		    deals[_dealhash].providerRep,
 		    deals[_dealhash].seekerRep,
