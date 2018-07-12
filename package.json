@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "solcpiler" : "solcpiler --solc-version v0.4.23+commit.124ca40d -i ./contracts/HashtagSimpleDeal.sol && solcpiler --solc-version v0.4.23+commit.124ca40d -i ./contracts/MiniMeToken/MiniMeToken.sol && solcpiler --solc-version v0.4.23+commit.124ca40d -i ./contracts/HashtagProxy/HashtagProxy.sol",
+    "solcpiler": "solcpiler --solc-version v0.4.23+commit.124ca40d -i ./contracts/HashtagSimpleDeal.sol && solcpiler --solc-version v0.4.23+commit.124ca40d -i ./contracts/MiniMeToken/MiniMeToken.sol && solcpiler --solc-version v0.4.23+commit.124ca40d -i ./contracts/HashtagProxy/HashtagProxy.sol",
     "browserify": "browserify utility.js --standalone utility > gs-client/utility.js && browserify node_modules/keythereum/index.js --standalone keythereum > gs-client/keythereum.js"
   },
   "repository": {
@@ -29,6 +29,7 @@
     "dotenv": "^4.0.0",
     "eth-lightwallet": "git+https://github.com/BlockTube/eth-lightwallet.git",
     "ethereumjs-tx": "1.1.1",
+    "eth-crypto": "^1.2.2",
     "ethereumjs-util": "^4.5.0",
     "express": "^4.13.4",
     "hooked-web3-provider": "^1.0.0",

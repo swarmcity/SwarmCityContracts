@@ -6,10 +6,8 @@ pragma solidity ^0.4.23;
 	*  for the world, with love.
 	*  description Symmetrical Escrow Deal Contract
 	*  description This is the hashtag contract for creating Swarm City marketplaces.
-	*  This contract is used in by the hashtagFactory to spawn new hashtags. It's a
-	*  MiniMe based contract, that holds the reputation balances,
-	*  and mint the reputation tokens.
-	*  This contract makes a specific kind of deals called "SimpleDeals"
+	*  It's the first, most simple approach to making Swarm City work.
+	*  This contract creates "SimpleDeals".
 	*/
 
 import './IMiniMeToken.sol';
@@ -28,7 +26,7 @@ contract HashtagSimpleDeal is Ownable {
 	IMiniMeToken public token;
 	DetailedERC20 public ProviderRep;
 	DetailedERC20 public SeekerRep;
-	address public payoutaddress;
+	address public payoutAddress;
 	string public metadataHash;
 
 	// @notice DealStatuses enum
@@ -105,7 +103,7 @@ contract HashtagSimpleDeal is Ownable {
 
 		/// Hashtag fee payout address is set
 		/// First time we set it to msg.sender
-		payoutaddress = msg.sender;
+		payoutAddress = msg.sender;
 	}
 
 	function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData) public {
@@ -115,7 +113,7 @@ contract HashtagSimpleDeal is Ownable {
 
 	/// @notice The Hashtag owner can always update the payout address.
 	function setPayoutAddress(address _payoutaddress) public onlyOwner {
-		payoutaddress = _payoutaddress;
+		payoutAddress = _payoutaddress;
 		emit HashtagChanged("Payout address changed");
 	}
 
@@ -142,7 +140,6 @@ contract HashtagSimpleDeal is Ownable {
 		bytes32 _r,
 		bytes32 _s
     ) public {
-
 		// make sure there is enough to pay the hashtag fee later on
 		require (hashtagFee / 2 <= _offerValue);
 		
@@ -172,13 +169,13 @@ contract HashtagSimpleDeal is Ownable {
 	}
 
 	/// @notice The Cancel deal function
-	/// @notice Half of the hashtagfee is sent to payoutaddress
+	/// @notice Half of the hashtagfee is sent to payoutAddress
 	function cancelDeal(bytes32 _dealhash) public {
 		dealStruct storage d = deals[_dealhash];
 		if (d.dealValue > 0 && d.provider == 0x0 && d.status == DealStatuses.Open)
 		{
 			// @dev if you cancel the deal you pay the hashtagfee / 2
-			require (token.transfer(payoutaddress,d.hashtagFee / 2));
+			require (token.transfer(payoutAddress,d.hashtagFee / 2));
 
 			// @dev cancel this Deal
 			require (token.transfer(d.seeker,d.dealValue));
@@ -214,15 +211,15 @@ contract HashtagSimpleDeal is Ownable {
 	function resolve(bytes32 _dealhash, uint _seekerFraction) public {
 		dealStruct storage d = deals[_dealhash];
 
-		/// @dev this function can only be called by the current payoutaddress of the hastag
+		/// @dev this function can only be called by the current payoutAddress of the hastag
 		/// @dev Which is owner for now
-		require (msg.sender == payoutaddress);
+		require (msg.sender == payoutAddress);
 
 		/// @dev only disputed deals can be resolved
 		require (d.status == DealStatuses.Disputed) ;
 
 		/// @dev pay out hashtagFee
-		require (token.transfer(payoutaddress,d.hashtagFee));
+		require (token.transfer(payoutAddress,d.hashtagFee));
 
 		/// @dev send the seeker fraction back to the dealowner
 		require (token.transfer(d.seeker,_seekerFraction));
@@ -278,7 +275,7 @@ contract HashtagSimpleDeal is Ownable {
 		require (d.status == DealStatuses.Open);
 
 		/// @dev pay out hashtagFee
-		require (token.transfer(payoutaddress,d.hashtagFee));
+		require (token.transfer(payoutAddress,d.hashtagFee));
 
 		/// @dev pay out the provider
 		require (token.transfer(d.provider,d.dealValue * 2));

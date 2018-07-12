@@ -12,7 +12,7 @@ module.exports = {
     },
     live: {
       host: "localhost",
-      port: 8545,
+      port: 68545,
       network_id: "1"   // Match any network id
     },
     // ropsten: {
