@@ -15,7 +15,7 @@ contract('HashtagSimpleDeal', (accounts) => {
     var hashtagMeta = "QmVFumDg1Ey6B1vaQbrPfh5EW1DbcW8yeFsbuYFiGUU381";
     var hashtagCommission = 600000000000000000;
     var itemId = "abc";
-    var privateKey1 = "23101c653848e6a516cb4af59d483af9060b29bb438425d38078b4a3378d4211";
+    var privateKey1 = "7a66a08362e3f762de3635a753d7cedb06c8bc35d617f273082a365c12a3be86";
     var itemValue = 1200000000000000000;
     var itemIpfs = "QmPsUmJTEHEHtPetyFsKaarwVWwBMJiYhvcLEQz5kWAJZX";
 
@@ -109,33 +109,39 @@ contract('HashtagSimpleDeal', (accounts) => {
     describe('Deal making and payout flow', function () {
         it("Create a new deal on the hashtag contract", function(done) {
             var itemHash = web3.sha3(itemId);
-
             var sig = ethUtil.ecsign(new Buffer(itemHash.slice(2), 'hex'), new Buffer(privateKey1, 'hex'));
-
             const v = sig.v;
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
-
             var requestValue = itemValue + hashtagCommission / 2;
 
+            console.log(requestValue / 1e18);
+            
             var c = web3.eth.contract(hashtagContract.abi);
             var hashtagContractInstance = c.at(hashtagContract.address);
+            // var txdata = hashtagContractInstance.makeDealForTwo.getData(itemHash, itemValue, itemIpfs, v, r, s, {
+            //     from: seeker,
+            // });
 
-            var txdata = hashtagContractInstance.makeDealForTwo.getData(itemHash, itemValue, itemIpfs, v, r, s, {
+            var txdata = hashtagContractInstance.methods.makeDealForTwo(itemHash, itemValue, itemIpfs, v, r, s, {
                 from: seeker,
-            });
-
-            // txdata: 0x8f142ce94e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c4500000000000000000000000000000000000000000000000010a741a46278000000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000001b811e87718179f6fbc44862e68ff81fed75902c575f6b999dfb2fa300b09ce7f53ff4ffcbd60dd10f3064645a5180b77d2c763138afd42ed320c42e1745b40bcc000000000000000000000000000000000000000000000000000000000000002e516d5073556d4a5445484548745065747946734b61617277565777424d4a69596876634c45517a356b57414a5a58000000000000000000000000000000000000
+            }).encodeABI();
             
-            var t = web3.eth.contract(MiniMeToken.abi);
-            var swtTokenInstance = t.at(swtToken.address);
 
-            swtTokenInstance.approveAndCall(hashtagContract.address, requestValue, txdata, {
-                from: seeker,
-                gas: 4700000
-             }).then(function(res) {
-                done();
-             });
+            // write the approve function first / check if it has been set
+            // then do the tx
+
+            console.log(txdata);
+
+            // var t = web3.eth.contract(MiniMeToken.abi);
+            // var swtTokenInstance = t.at(swtToken.address);
+
+            // swtToken.approveAndCall(hashtagContract.address, requestValue, txdata, {
+            //     from: seeker,
+            //     gas: 4700000
+            // }).then(function(res) {
+            //     done();
+            // });
         });
     });
 });

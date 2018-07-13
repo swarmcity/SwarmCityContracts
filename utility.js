@@ -9,7 +9,7 @@
 // const SolidityEvent = require('web3/lib/web3/event.js');
 // const coder = require('web3/lib/solidity/coder.js');
 // const utils = require('web3/lib/utils/utils.js');
-const sha3 = require('web3/lib/utils/sha3.js');
+const sha3 = require('web3-utils/src/soliditySha3.js');
 const sha256 = require('js-sha256').sha256;
 const Tx = require('ethereumjs-tx');
 // const keythereum = require('keythereum');
