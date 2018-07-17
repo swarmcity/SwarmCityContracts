@@ -147,7 +147,7 @@ contract HashtagSimpleDeal is Ownable {
 		// fund this deal
 		uint totalValue = _offerValue + hashtagFee / 2;
 		
-        require ( _offerValue + hashtagFee / 2 >= _offerValue); //overflow protection
+        require ( _offerValue + hashtagFee / 2 >= _offerValue); // overflow protection
 
 		// if deal already exists don't allow to overwrite it
 		require (deals[_dealhash].hashtagFee == 0 && deals[_dealhash].dealValue == 0);

@@ -23,13 +23,12 @@
   },
   "dependencies": {
     "bignumber.js": "4.0.1",
-    "bitcore-mnemonic": "github:claykohut/bitcore-mnemonic",
     "body-parser": "^1.17.2",
     "cors": "^2.7.1",
     "dotenv": "^4.0.0",
+    "eth-crypto": "^1.2.2",
     "eth-lightwallet": "git+https://github.com/BlockTube/eth-lightwallet.git",
     "ethereumjs-tx": "1.1.1",
-    "eth-crypto": "^1.2.2",
     "ethereumjs-util": "^4.5.0",
     "express": "^4.13.4",
     "hooked-web3-provider": "^1.0.0",
@@ -40,5 +39,8 @@
     "request": "^2.72.0",
     "web3": "1.0.0-beta.29"
   },
-  "homepage": "https://github.com/swarmcity/sc-gasstation#readme"
+  "homepage": "https://github.com/swarmcity/sc-gasstation#readme",
+  "devDependencies": {
+    "chai": "^4.1.2"
+  }
 }
