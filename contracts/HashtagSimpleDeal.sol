@@ -21,7 +21,7 @@ contract HashtagSimpleDeal is Ownable {
 	/// @param_SeekerRep The rep token that is minted for the Seeker
 	/// @param_payoutaddress The address where the hashtag fee is sent.
 	/// @param_metadataHash The IPFS hash metadata for this hashtag
-	string public name;
+	string public hashtagName;
 	uint public hashtagFee;
 	IMiniMeToken public token;
 	DetailedERC20 public ProviderRep;
@@ -29,8 +29,8 @@ contract HashtagSimpleDeal is Ownable {
 	address public payoutAddress;
 	string public metadataHash;
 
-	// @notice DealStatuses enum
-	enum DealStatuses {
+	// @notice itemStatuses enum
+	enum itemStatuses {
 		Open,
 		Done,
 		Disputed,
@@ -39,40 +39,40 @@ contract HashtagSimpleDeal is Ownable {
 	}
 
 	/// @param_dealStruct The deal object.
-	/// @param_status Coming from DealStatuses enum.
+	/// @param_status Coming from itemStatuses enum.
 	/// Statuses: Open, Done, Disputed, Resolved, Cancelled
 	/// @param_hashtagFee The value of the hashtag fee is stored in the deal. This prevents the hashtagmaintainer to influence an existing deal when changing the hashtag fee.
 	/// @param_dealValue The value of the deal (SWT)
 	/// @param_provider The address of the provider
 	/// @param_deals Array of deals made by this hashtag
 
-	struct dealStruct {
-		DealStatuses status;
+	struct itemStruct {
+		itemStatuses status;
 		uint hashtagFee;
-		uint dealValue;
+		uint itemValue;
 		uint providerRep;
 		uint seekerRep;
-		address provider;
-		address seeker;
+		address providerAddress;
+		address seekerAddress;
 		string ipfsMetadata;
 	}
 
-	mapping(bytes32=>dealStruct) deals;
+	mapping(bytes32=>itemStruct) items;
 
-	/// Reputation token for provider is minted and sent
-	event ProviderRepAdded(address to, uint amount);
-
-	/// Reputation token for seeker is minted and sent
+	/// @dev Event Seeker reputation token is minted and sent
 	event SeekerRepAdded(address to, uint amount);
 
+    /// @dev Event Provider reputation token is minted and sent
+    event ProviderRepAdded(address to, uint amount);
+
 	/// @dev Event NewDealForTwo - This event is fired when a new deal for two is created.
-	event NewDealForTwo(address owner,bytes32 dealhash, string ipfsMetadata, uint offerValue, uint hashtagFee, uint totalValue, uint seekerRep);
+	event NewItemForTwo(address owner, bytes32 itemHash, string ipfsMetadata, uint itemValue, uint hashtagFee, uint totalValue, uint seekerRep);
 
 	/// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
-	event FundDeal(address provider,address owner, bytes32 dealhash,string ipfsMetadata);
+	event FundDeal(address providerAddress, address owner, bytes32 itemHash, string ipfsMetadata);
 
 	/// @dev DealStatusChange - This event is fired when a deal status is updated.
-	event DealStatusChange(address owner,bytes32 dealhash,DealStatuses newstatus,string ipfsMetadata);
+	event ItemStatusChange(address owner, bytes32 itemHash, itemStatuses newstatus, string ipfsMetadata);
 
 	/// @dev ReceivedApproval - This event is fired when minime sends approval.
 	event ReceivedApproval(address sender, uint amount, address fromcontract, bytes extraData);
@@ -81,10 +81,10 @@ contract HashtagSimpleDeal is Ownable {
 	event HashtagChanged(string _change);
 
 	/// @notice The function that creates the hashtag
-	constructor(address _token, string _name, uint _hashtagFee, string _ipfsMetadataHash) public {
+	constructor(address _token, string _hashtagName, uint _hashtagFee, string _ipfsMetadataHash) public {
 
 		/// @notice The name of the hashtag is set
-		name = _name;
+		hashtagName = _hashtagName;
 
 		/// @notice The seeker reputation token is created
 		SeekerRep = new DetailedERC20("SeekerRep","SWRS", 0);
@@ -129,189 +129,113 @@ contract HashtagSimpleDeal is Ownable {
 		emit HashtagChanged("Hashtag fee amount changed");
 	}
 
-	/// @notice The Deal making stuff
+	/// @notice The item making stuff
 
-	/// @notice The create Deal function
-	function makeDealForTwo(
-		bytes32 _dealhash, 
-		uint _offerValue, 
-		string _ipfsMetadata,
-		uint8 _v,
-		bytes32 _r,
-		bytes32 _s
+	/// @notice The create item function
+	function newItem(
+		bytes32 _itemHash, 
+		uint _itemValue, 
+		string _ipfsMetadata
     ) public {
 		// make sure there is enough to pay the hashtag fee later on
-		require (hashtagFee / 2 <= _offerValue);
+		require (hashtagFee / 2 <= _itemValue); // Overflow protection
 		
-		address dealowner = ecrecover(_dealhash, _v, _r, _s);
 		// fund this deal
-		uint totalValue = _offerValue + hashtagFee / 2;
+		uint totalValue = _itemValue + hashtagFee / 2;
 		
-        require ( _offerValue + hashtagFee / 2 >= _offerValue); //overflow protection
+        require ( _itemValue + hashtagFee / 2 >= _itemValue); //overflow protection
 
 		// if deal already exists don't allow to overwrite it
-		require (deals[_dealhash].hashtagFee == 0 && deals[_dealhash].dealValue == 0);
+		require (items[_itemHash].hashtagFee == 0 && items[_itemHash].itemValue == 0);
 
-		require (token.transferFrom(dealowner,this, _offerValue + hashtagFee / 2));
+		require (token.transferFrom(tx.origin,this, _itemValue + hashtagFee / 2));
 
 		// if it's funded - fill in the details
-		deals[_dealhash] = dealStruct(DealStatuses.Open,
+		items[_itemHash] = itemStruct(itemStatuses.Open,
     		hashtagFee,
-    		_offerValue,
+    		_itemValue,
     		0,
-    		SeekerRep.balanceOf(dealowner),
+    		SeekerRep.balanceOf(tx.origin),
     		0x0,
-    		dealowner,
+    		tx.origin,
     		_ipfsMetadata);
     
-        emit NewDealForTwo(dealowner,_dealhash,_ipfsMetadata, _offerValue, hashtagFee, totalValue, SeekerRep.balanceOf(dealowner));
-
-	}
-
-	/// @notice The Cancel deal function
-	/// @notice Half of the hashtagfee is sent to payoutAddress
-	function cancelDeal(bytes32 _dealhash) public {
-		dealStruct storage d = deals[_dealhash];
-		if (d.dealValue > 0 && d.provider == 0x0 && d.status == DealStatuses.Open)
-		{
-			// @dev if you cancel the deal you pay the hashtagfee / 2
-			require (token.transfer(payoutAddress,d.hashtagFee / 2));
-
-			// @dev cancel this Deal
-			require (token.transfer(d.seeker,d.dealValue));
-
-			deals[_dealhash].status = DealStatuses.Cancelled;
-
-			emit DealStatusChange(msg.sender,_dealhash,DealStatuses.Cancelled,deals[_dealhash].ipfsMetadata);
-		}
-	}
-
-	/// @notice seeker or provider can choose to dispute an ongoing deal
-	function dispute(bytes32 _dealhash) public {
-		dealStruct storage d = deals[_dealhash];
-		require (d.status == DealStatuses.Open);
-
-		if (msg.sender == d.seeker){
-			/// @dev seeker goes in conflict
-
-			/// @dev can only be only when there is a provider
-			require (d.provider != 0x0 );
-
-		} else {
-			/// @dev if not the seeker, only the provider can go in conflict
-			require (d.provider == msg.sender);
-		}
-		/// @dev mark the deal as Disputed
-		deals[_dealhash].status = DealStatuses.Disputed;
-
-		emit DealStatusChange(d.seeker,_dealhash,DealStatuses.Disputed,deals[_dealhash].ipfsMetadata);
-	}
-
-	/// @notice conflict resolver can resolve a disputed deal
-	function resolve(bytes32 _dealhash, uint _seekerFraction) public {
-		dealStruct storage d = deals[_dealhash];
-
-		/// @dev this function can only be called by the current payoutAddress of the hastag
-		/// @dev Which is owner for now
-		require (msg.sender == payoutAddress);
-
-		/// @dev only disputed deals can be resolved
-		require (d.status == DealStatuses.Disputed) ;
-
-		/// @dev pay out hashtagFee
-		require (token.transfer(payoutAddress,d.hashtagFee));
-
-		/// @dev send the seeker fraction back to the dealowner
-		require (token.transfer(d.seeker,_seekerFraction));
-		//seekerfraction = 4
-
-		/// @dev what the seeker is asking for cannot be more than what he offered
-		require(_seekerFraction <= d.dealValue - d.hashtagFee/2);
-
-		/// @dev check
-		require(d.dealValue * 2 - _seekerFraction <= d.dealValue * 2);
-
-		/// @dev send the remaining deal value back to the provider
-		require (token.transfer(d.provider,d.dealValue * 2 - _seekerFraction));
-
-		deals[_dealhash].status = DealStatuses.Resolved;
-
-		emit DealStatusChange(d.seeker,_dealhash,DealStatuses.Resolved,deals[_dealhash].ipfsMetadata);
+        emit NewItemForTwo(tx.origin,_itemHash,_ipfsMetadata, _itemValue, hashtagFee, totalValue, SeekerRep.balanceOf(tx.origin));
 
 	}
 
 	/// @notice Provider has to fund the deal
-	function fundDeal(string _dealid) public {
+	function fundDeal(string _itemId) public {
 
-		bytes32 dealhash = keccak256(_dealid);
+		bytes32 itemHash = keccak256(_itemId);
 
-		dealStruct storage d = deals[dealhash];
+		itemStruct storage d = items[itemHash];
 
 		/// @dev only allow open deals to be funded
-		require (d.status == DealStatuses.Open);
+		require (d.status == itemStatuses.Open);
 
 		/// @dev if the provider is filled in - the deal was already funded
-		require (d.provider == 0x0);
+		require (d.providerAddress == 0x0);
 
 		/// @dev put the tokens from the provider on the deal
-		require (d.dealValue + d.hashtagFee / 2 >= d.dealValue);
-		require (token.transferFrom(d.seeker,this,d.dealValue + d.hashtagFee / 2));
+		require (d.itemValue + d.hashtagFee / 2 >= d.itemValue);
+		require (token.transferFrom(tx.origin,this,d.itemValue + d.hashtagFee / 2));
 
 		/// @dev fill in the address of the provider ( to payout the deal later on )
-		deals[dealhash].provider = msg.sender;
-        deals[dealhash].providerRep = ProviderRep.balanceOf(msg.sender);
+		items[itemHash].providerAddress = tx.origin;
+        items[itemHash].providerRep = ProviderRep.balanceOf(tx.origin);
 
-		emit FundDeal(msg.sender, d.seeker, dealhash, _dealid);
+		emit FundDeal(tx.origin, d.seekerAddress, itemHash, _itemId);
 	}
 
 	/// @notice The payout function can only be called by the deal owner.
-	function payout(bytes32 _dealhash) public {
+	function payout(bytes32 _itemHash) public {
 
-		require(deals[_dealhash].seeker == msg.sender);
+		require(items[_itemHash].seekerAddress == msg.sender);
 
-		dealStruct storage d = deals[_dealhash];
+		itemStruct storage d = items[_itemHash];
 
 		/// @dev you can only payout open deals
-		require (d.status == DealStatuses.Open);
+		require (d.status == itemStatuses.Open);
 
 		/// @dev pay out hashtagFee
 		require (token.transfer(payoutAddress,d.hashtagFee));
 
 		/// @dev pay out the provider
-		require (token.transfer(d.provider,d.dealValue * 2));
+		require (token.transfer(d.providerAddress,d.itemValue * 2));
 
 		/// @dev mint REP for Provider
-		ProviderRep.mint(d.provider, 5);
-		emit ProviderRepAdded(d.provider, 5);
+		ProviderRep.mint(d.providerAddress, 5);
+		emit ProviderRepAdded(d.providerAddress, 5);
 
 		/// @dev mint REP for Seeker
-		SeekerRep.mint(d.seeker, 5);
-		emit SeekerRepAdded(d.seeker, 5);
+		SeekerRep.mint(d.seekerAddress, 5);
+		emit SeekerRepAdded(d.seekerAddress, 5);
 
 		/// @dev mark the deal as done
-		deals[_dealhash].status = DealStatuses.Done;
-		emit DealStatusChange(d.seeker,_dealhash,DealStatuses.Done,d.ipfsMetadata);
+		items[_itemHash].status = itemStatuses.Done;
+		emit ItemStatusChange(d.seekerAddress,_itemHash,itemStatuses.Done,d.ipfsMetadata);
 
 	}
 
 	/// @notice Read the details of a deal
-	function readDeal(bytes32 _dealhash)
+	function readDeal(bytes32 _itemHash)
 		constant public returns(
-		    DealStatuses status, 
+		    itemStatuses status, 
 		    uint hashtagFee,
-			uint dealValue,
+			uint itemValue,
 			uint providerRep,
 		    uint seekerRep,
-			address provider,
+			address providerAddress,
 			string ipfsMetadata)
 	{
 		return (
-		    deals[_dealhash].status,
-		    deals[_dealhash].hashtagFee,
-		    deals[_dealhash].dealValue,
-		    deals[_dealhash].providerRep,
-		    deals[_dealhash].seekerRep,
-		    deals[_dealhash].provider,
-		    deals[_dealhash].ipfsMetadata);
+		    items[_itemHash].status,
+		    items[_itemHash].hashtagFee,
+		    items[_itemHash].itemValue,
+		    items[_itemHash].providerRep,
+		    items[_itemHash].seekerRep,
+		    items[_itemHash].providerAddress,
+		    items[_itemHash].ipfsMetadata);
 	}
 }
