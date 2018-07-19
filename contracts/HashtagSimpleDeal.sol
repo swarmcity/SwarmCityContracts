@@ -69,7 +69,7 @@ contract HashtagSimpleDeal is Ownable {
 	event NewItemForTwo(address owner, bytes32 itemHash, string ipfsMetadata, uint itemValue, uint hashtagFee, uint totalValue, uint seekerRep);
 
 	/// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
-	event FundDeal(address providerAddress, address owner, bytes32 itemHash, string ipfsMetadata);
+	event FundDeal(address seeker, address provider, bytes32 itemHash);
 
 	/// @dev DealStatusChange - This event is fired when a deal status is updated.
 	event ItemStatusChange(address owner, bytes32 itemHash, itemStatuses newstatus, string ipfsMetadata);
@@ -185,7 +185,7 @@ contract HashtagSimpleDeal is Ownable {
 		items[itemHash].providerAddress = tx.origin;
         items[itemHash].providerRep = ProviderRep.balanceOf(tx.origin);
 
-		emit FundDeal(tx.origin, d.seekerAddress, itemHash, _itemId);
+		emit FundDeal(items[itemHash].seekerAddress, items[itemHash].providerAddress, itemHash);
 	}
 
 	/// @notice The payout function can only be called by the deal owner.
