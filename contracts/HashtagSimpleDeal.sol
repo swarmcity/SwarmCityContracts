@@ -47,14 +47,14 @@ contract HashtagSimpleDeal is Ownable {
 	/// @param_deals Array of deals made by this hashtag
 
     struct itemStruct {
-    itemStatuses status;
-    uint hashtagFee;
-    uint itemValue;
-    uint providerRep;
-    uint seekerRep;
-    address providerAddress;
-    address seekerAddress;
-    string ipfsMetadata;
+        itemStatuses status;
+        uint hashtagFee;
+        uint itemValue;
+        uint providerRep;
+        uint seekerRep;
+        address providerAddress;
+        address seekerAddress;
+        string ipfsMetadata;
     }
 
     mapping(bytes32=>itemStruct) items;
@@ -107,135 +107,135 @@ contract HashtagSimpleDeal is Ownable {
     }
 
     function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData) public {
-    require(address(this).call(_extraData));
-    emit ReceivedApproval( _msgsender,  _amount,  _fromcontract, _extraData);
+        require(address(this).call(_extraData));
+        emit ReceivedApproval( _msgsender,  _amount,  _fromcontract, _extraData);
     }
 
     /// @notice The Hashtag owner can always update the payout address.
     function setPayoutAddress(address _payoutaddress) public onlyOwner {
-    payoutAddress = _payoutaddress;
-    emit HashtagChanged("Payout address changed");
+        payoutAddress = _payoutaddress;
+        emit HashtagChanged("Payout address changed");
     }
 
     /// @notice The Hashtag owner can always update the metadata for the hashtag.
     function setMetadataHash(string _ipfsMetadataHash ) public onlyOwner  {
-    metadataHash = _ipfsMetadataHash;
-    emit HashtagChanged("MetaData hash changed");
+        metadataHash = _ipfsMetadataHash;
+        emit HashtagChanged("MetaData hash changed");
     }
 
     /// @notice The Hashtag owner can always change the hashtag fee amount
     function setHashtagFee(uint _newHashtagFee) public onlyOwner {
-    hashtagFee = _newHashtagFee;
-    emit HashtagChanged("Hashtag fee amount changed");
+        hashtagFee = _newHashtagFee;
+        emit HashtagChanged("Hashtag fee amount changed");
     }
 
     /// @notice The item making stuff
 
     /// @notice The create item function
     function newItem(
-    bytes32 _itemHash, 
-    uint _itemValue, 
-    string _ipfsMetadata
+        bytes32 _itemHash, 
+        uint _itemValue, 
+        string _ipfsMetadata
     ) public {
-    // make sure there is enough to pay the hashtag fee later on
-    require (hashtagFee / 2 <= _itemValue); // Overflow protection
+        // make sure there is enough to pay the hashtag fee later on
+        require (hashtagFee / 2 <= _itemValue); // Overflow protection
 
-    // fund this deal
-    uint totalValue = _itemValue + hashtagFee / 2;
+        // fund this deal
+        uint totalValue = _itemValue + hashtagFee / 2;
 
-    require ( _itemValue + hashtagFee / 2 >= _itemValue); //overflow protection
+        require ( _itemValue + hashtagFee / 2 >= _itemValue); //overflow protection
 
-    // if deal already exists don't allow to overwrite it
-    require (items[_itemHash].hashtagFee == 0 && items[_itemHash].itemValue == 0);
+        // if deal already exists don't allow to overwrite it
+        require (items[_itemHash].hashtagFee == 0 && items[_itemHash].itemValue == 0);
 
-    require (token.transferFrom(tx.origin,this, _itemValue + hashtagFee / 2));
+        require (token.transferFrom(tx.origin,this, _itemValue + hashtagFee / 2));
 
-    // if it's funded - fill in the details
-    items[_itemHash] = itemStruct(itemStatuses.Open,
-    hashtagFee,
-    _itemValue,
-    0,
-    SeekerRep.balanceOf(tx.origin),
-    0x0,
-    tx.origin,
-    _ipfsMetadata);
+        // if it's funded - fill in the details
+        items[_itemHash] = itemStruct(itemStatuses.Open,
+        hashtagFee,
+        _itemValue,
+        0,
+        SeekerRep.balanceOf(tx.origin),
+        0x0,
+        tx.origin,
+        _ipfsMetadata);
 
-    emit NewItemForTwo(tx.origin,_itemHash,_ipfsMetadata, _itemValue, hashtagFee, totalValue, SeekerRep.balanceOf(tx.origin));
+        emit NewItemForTwo(tx.origin,_itemHash,_ipfsMetadata, _itemValue, hashtagFee, totalValue, SeekerRep.balanceOf(tx.origin));
 
     }
 
     /// @notice Provider has to fund the deal
     function fundDeal(string _itemId) public {
 
-    bytes32 itemHash = keccak256(_itemId);
+        bytes32 itemHash = keccak256(_itemId);
 
-    itemStruct storage d = items[itemHash];
+        itemStruct storage d = items[itemHash];
 
-    /// @dev only allow open deals to be funded
-    require (d.status == itemStatuses.Open);
+        /// @dev only allow open deals to be funded
+        require (d.status == itemStatuses.Open);
 
-    /// @dev if the provider is filled in - the deal was already funded
-    require (d.providerAddress == 0x0);
+        /// @dev if the provider is filled in - the deal was already funded
+        require (d.providerAddress == 0x0);
 
-    /// @dev put the tokens from the provider on the deal
-    require (d.itemValue + d.hashtagFee / 2 >= d.itemValue);
-    require (token.transferFrom(tx.origin,this,d.itemValue + d.hashtagFee / 2));
+        /// @dev put the tokens from the provider on the deal
+        require (d.itemValue + d.hashtagFee / 2 >= d.itemValue);
+        require (token.transferFrom(tx.origin,this,d.itemValue + d.hashtagFee / 2));
 
-    /// @dev fill in the address of the provider ( to payout the deal later on )
-    items[itemHash].providerAddress = tx.origin;
-    items[itemHash].providerRep = ProviderRep.balanceOf(tx.origin);
+        /// @dev fill in the address of the provider ( to payout the deal later on )
+        items[itemHash].providerAddress = tx.origin;
+        items[itemHash].providerRep = ProviderRep.balanceOf(tx.origin);
 
-    emit FundDeal(items[itemHash].seekerAddress, items[itemHash].providerAddress, itemHash);
-    }
+        emit FundDeal(items[itemHash].seekerAddress, items[itemHash].providerAddress, itemHash);
+        }
 
-    /// @notice The payout function can only be called by the deal owner.
-    function payout(bytes32 _itemHash) public {
+        /// @notice The payout function can only be called by the deal owner.
+        function payout(bytes32 _itemHash) public {
 
-    require(items[_itemHash].seekerAddress == msg.sender);
+        require(items[_itemHash].seekerAddress == msg.sender);
 
-    itemStruct storage d = items[_itemHash];
+        itemStruct storage d = items[_itemHash];
 
-    /// @dev you can only payout open deals
-    require (d.status == itemStatuses.Open);
+        /// @dev you can only payout open deals
+        require (d.status == itemStatuses.Open);
 
-    /// @dev pay out hashtagFee
-    require (token.transfer(payoutAddress,d.hashtagFee));
+        /// @dev pay out hashtagFee
+        require (token.transfer(payoutAddress,d.hashtagFee));
 
-    /// @dev pay out the provider
-    require (token.transfer(d.providerAddress,d.itemValue * 2));
+        /// @dev pay out the provider
+        require (token.transfer(d.providerAddress,d.itemValue * 2));
 
-    /// @dev mint REP for Provider
-    ProviderRep.mint(d.providerAddress, 5);
-    emit ProviderRepAdded(d.providerAddress, 5);
+        /// @dev mint REP for Provider
+        ProviderRep.mint(d.providerAddress, 5);
+        emit ProviderRepAdded(d.providerAddress, 5);
 
-    /// @dev mint REP for Seeker
-    SeekerRep.mint(d.seekerAddress, 5);
-    emit SeekerRepAdded(d.seekerAddress, 5);
+        /// @dev mint REP for Seeker
+        SeekerRep.mint(d.seekerAddress, 5);
+        emit SeekerRepAdded(d.seekerAddress, 5);
 
-    /// @dev mark the deal as done
-    items[_itemHash].status = itemStatuses.Done;
-    emit ItemStatusChange(d.seekerAddress,_itemHash,itemStatuses.Done,d.ipfsMetadata);
+        /// @dev mark the deal as done
+        items[_itemHash].status = itemStatuses.Done;
+        emit ItemStatusChange(d.seekerAddress,_itemHash,itemStatuses.Done,d.ipfsMetadata);
 
     }
 
     /// @notice Read the details of a deal
     function readDeal(bytes32 _itemHash)
-    constant public returns(
-    itemStatuses status, 
-    uint hashtagFee,
-    uint itemValue,
-    uint providerRep,
-    uint seekerRep,
-    address providerAddress,
-    string ipfsMetadata)
-    {
-    return (
-    items[_itemHash].status,
-    items[_itemHash].hashtagFee,
-    items[_itemHash].itemValue,
-    items[_itemHash].providerRep,
-    items[_itemHash].seekerRep,
-    items[_itemHash].providerAddress,
-    items[_itemHash].ipfsMetadata);
+        constant public returns(
+            itemStatuses status, 
+            uint hashtagFee,
+            uint itemValue,
+            uint providerRep,
+            uint seekerRep,
+            address providerAddress,
+            string ipfsMetadata)
+        {
+        return (
+            items[_itemHash].status,
+            items[_itemHash].hashtagFee,
+            items[_itemHash].itemValue,
+            items[_itemHash].providerRep,
+            items[_itemHash].seekerRep,
+            items[_itemHash].providerAddress,
+            items[_itemHash].ipfsMetadata);
     }
 }

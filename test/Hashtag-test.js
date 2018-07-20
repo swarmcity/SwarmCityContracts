@@ -107,6 +107,7 @@ contract('HashtagSimpleDeal', (accounts) => {
               gas: 4700000,
               from: accounts[0]
             }).then(function(res) {
+                assert.isNotNull(res);
                 done();
             });
         });
@@ -117,49 +118,12 @@ contract('HashtagSimpleDeal', (accounts) => {
                 done();
             });
         });
-
-        // it("should have no reputation token balance for Seeker account", async function(done) {
-        //     let repToken = artifacts.require("DetailedERC20");
-        //     let repTokenInstance = await repToken.at(swrsToken);
-        //     var repBalance = await repTokenInstance.balanceOf(seeker);
-        //     assert.equal(repBalance.toNumber(), 0, "Seeker reputation balance not correct after hashtag creation");
-        //     await done();
-        // });
-
-        // it("should have no reputation token balance for Provider account", async function(done) {
-        //     let repToken = artifacts.require("DetailedERC20");
-        //     let repTokenInstance = await repToken.at(swrpToken);
-        //     var repBalance = await repTokenInstance.balanceOf(provider);
-        //     assert.equal(repBalance.toNumber(), 0, "Provider reputation balance not correct after hashtag creation");
-        //     await done();
-        // });
-
     });
 
     describe('Item Creation Stage', function () {
         it("should create a new Item on the Hashtag contract", function(done) {
 
-            // Set up some listeners to get SOME debugging info
-
             var hashtagContractInstance = web3.eth.contract(hashtagContract.abi).at(hashtagContract.address);
-
-            var ReceivedApprovalEvent = hashtagContractInstance.ReceivedApproval({
-				fromBlock: "latest"
-            });
-
-            var NewItemEvent = hashtagContractInstance.NewItemForTwo({
-				fromBlock: "latest"
-			});
-            
-			ReceivedApprovalEvent.watch(function(error, result) {
-                //console.log('Hashtag received approval for item ', result.args.itemHash);
-			});
-
-            NewItemEvent.watch(function(error, result) {
-                //console.log('Hashtag created new item ', result.args);
-                done();
-            });
-            
 
             var txdata = hashtagContractInstance.newItem.getData(itemHash, itemValue, itemIpfs, {
                 from: seeker,
@@ -169,7 +133,8 @@ contract('HashtagSimpleDeal', (accounts) => {
                 from: seeker,
                 gas: 4700000
             }).then(function(res) {
-                //console.log(res.tx);
+                assert.isNotNull(res);
+                done();
             });
 
         });
@@ -177,7 +142,6 @@ contract('HashtagSimpleDeal', (accounts) => {
         it("should see token balance Seeker account decrease", function(done) {
             swtToken.balanceOf(seeker).then(function(balance) {
                 assert.equal(balance.toNumber(), 98500000000000000000, "Seeker balance not correct after deal making");
-                //console.log("seeker balance: ", balance.toNumber());
                 done();
             });
         });
@@ -185,14 +149,12 @@ contract('HashtagSimpleDeal', (accounts) => {
         it("should see token balance Hashtag account increase", function(done) {
             swtToken.balanceOf(hashtagContract.address).then(function(balance) {
                 assert.equal(balance.toNumber(), 1500000000000000000, "Hashtag balance not correct after deal making");
-                //console.log("hashtag balance: ", balance.toNumber());
                 done();
             });
         });
 
         it("should find the Item on the Hashtag", function(done) {
             hashtagContract.readDeal(itemHash).then(function(res) {
-                //console.log(res);
                 assert.equal(res[2].toNumber(), itemValue, "Item creation error");
                 done();
              });
@@ -203,24 +165,6 @@ contract('HashtagSimpleDeal', (accounts) => {
     describe('Item Funding Stage', function () {
         it("should fund the new Item on the Hashtag contract", function(done) {
             var hashtagContractInstance = web3.eth.contract(hashtagContract.abi).at(hashtagContract.address);
-
-            var ReceivedApprovalEvent = hashtagContractInstance.ReceivedApproval({
-				fromBlock: "latest"
-            });
-
-            var FundDealEvent = hashtagContractInstance.FundDeal({
-				fromBlock: "latest"
-			});
-            
-			ReceivedApprovalEvent.watch(function(error, result) {
-                //console.log('Hashtag received approval for item ', result);
-			});
-
-            FundDealEvent.watch(function(error, result) {
-                //console.log('Hashtag fund new item ', result);
-                assert.equal(result.args.provider, provider, "Provider address is not correct");
-                done();
-            });
             
             var txdata = hashtagContractInstance.fundDeal.getData(itemId, {
                 from: provider,
@@ -230,21 +174,20 @@ contract('HashtagSimpleDeal', (accounts) => {
                 from: provider,
                 gas: 4700000
             }).then(function(res) {
-                //done();
+                assert.isNotNull(res);
+                done();
             });
         });
 
         it("should see token balance Provider account decrease", function(done) {
             swtToken.balanceOf(provider).then(function(balance) {
                 assert.equal(balance.toNumber(), 98500000000000000000, "Provider balance not correct after swt minting");
-                //console.log(balance.toNumber());
                 done();
             });
         });
 
         it("should set Provider address in Item", function(done) {
             hashtagContract.readDeal(itemHash).then(function(res) {
-                //console.log('readdeal: ',res[5]);
                 assert.equal(res[5], provider, "Provider address is not correct");
                 done();
             });
@@ -265,25 +208,13 @@ contract('HashtagSimpleDeal', (accounts) => {
         it("should see token balance Provider account increase", function(done) {
             swtToken.balanceOf(provider).then(function(balance) {
                 assert.equal(balance.toNumber(), 100900000000000000000, "Provider balance not correct after payout");
-                //console.log("Provider balance: ", balance.toNumber());
                 done();
             });
         });
 
-        // it("should see reputation token balance Provider account", function(done) {
-        //     var swrpTokenInstance = web3.eth.contract(RepToken.abi).at(swrpToken);
-
-        //     swrpTokenInstance.balanceOf(provider).then(function(balance) {
-        //         //assert.equal(balance.toNumber(), 100e18, "Seeker balance not correct after swt minting");
-        //         console.log("Provider reptoken balance: ", balance.toNumber());
-        //         //done();
-        //     });
-        // });
-
         it("should see token balance Seeker account decrease", function(done) {
             swtToken.balanceOf(seeker).then(function(balance) {
                 assert.equal(balance.toNumber(), 98500000000000000000, "Seeker balance not correct after payout");
-                //console.log("Seeker balance: ", balance.toNumber());
                 done();
             });
         });
@@ -293,7 +224,6 @@ contract('HashtagSimpleDeal', (accounts) => {
             let repTokenInstance = await repToken.at(swrsToken);
             var repBalance = await repTokenInstance.balanceOf(seeker);
             assert.equal(repBalance.toNumber(), 5, "Seeker reputation balance not correct after payout");
-            //done();
         });
 
         it("should see reputation token balance Provider account increase", async function() {
@@ -301,13 +231,11 @@ contract('HashtagSimpleDeal', (accounts) => {
             let repTokenInstance = await repToken.at(swrpToken);
             var repBalance = await repTokenInstance.balanceOf(provider);
             assert.equal(repBalance.toNumber(), 5, "Provider reputation balance not correct after payout");
-            //done();
         });
 
         it("should see token balance Maintainer account increase", function(done) {
             swtToken.balanceOf(maintainer).then(function(balance) {
                 assert.equal(balance.toNumber(), 600000000000000000, "Maintainer balance not correct after payout");
-                //console.log("Maintainer holds: ", balance.toNumber());
                 done();
             });
         });
@@ -315,12 +243,8 @@ contract('HashtagSimpleDeal', (accounts) => {
         it("should see token balance Hashtag account decrease", function(done) {
             swtToken.balanceOf(hashtagContract.address).then(function(balance) {
                 assert.equal(balance.toNumber(), 0, "Hashtag balance not correct after payout");
-                //console.log("Hashtag holds: ", balance.toNumber());
                 done();
             });
         });
-
     });
-
-
 });
