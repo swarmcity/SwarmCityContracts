@@ -1,241 +1,241 @@
 pragma solidity ^0.4.23;
 
 /**
-  *  @title Simple Deal Hashtag
-	*  @dev Created in Swarm City anno 2017,
-	*  for the world, with love.
-	*  description Symmetrical Escrow Deal Contract
-	*  description This is the hashtag contract for creating Swarm City marketplaces.
-	*  It's the first, most simple approach to making Swarm City work.
-	*  This contract creates "SimpleDeals".
-	*/
+*  @title Simple Deal Hashtag
+*  @dev Created in Swarm City anno 2017,
+*  for the world, with love.
+*  description Symmetrical Escrow Deal Contract
+*  description This is the hashtag contract for creating Swarm City marketplaces.
+*  It's the first, most simple approach to making Swarm City work.
+*  This contract creates "SimpleDeals".
+*/
 
-import './IMiniMeToken.sol';
-import './RepToken/DetailedERC20.sol';
+import "./IMiniMeToken.sol";
+import "./RepToken/DetailedERC20.sol";
 
 contract HashtagSimpleDeal is Ownable {
-	/// @param_name The human readable name of the hashtag
-	/// @param_hashtagFee The fixed hashtag fee in SWT
-	/// @param_token The SWT token
-	/// @param_ProviderRep The rep token that is minted for the Provider
-	/// @param_SeekerRep The rep token that is minted for the Seeker
-	/// @param_payoutaddress The address where the hashtag fee is sent.
-	/// @param_metadataHash The IPFS hash metadata for this hashtag
-	string public hashtagName;
-	uint public hashtagFee;
-	IMiniMeToken public token;
-	DetailedERC20 public ProviderRep;
-	DetailedERC20 public SeekerRep;
-	address public payoutAddress;
-	string public metadataHash;
+    /// @param_name The human readable name of the hashtag
+    /// @param_hashtagFee The fixed hashtag fee in SWT
+    /// @param_token The SWT token
+    /// @param_ProviderRep The rep token that is minted for the Provider
+    /// @param_SeekerRep The rep token that is minted for the Seeker
+    /// @param_payoutaddress The address where the hashtag fee is sent.
+    /// @param_metadataHash The IPFS hash metadata for this hashtag
+    string public hashtagName;
+    uint public hashtagFee;
+    IMiniMeToken public token;
+    DetailedERC20 public ProviderRep;
+    DetailedERC20 public SeekerRep;
+    address public payoutAddress;
+    string public metadataHash;
 
-	// @notice itemStatuses enum
-	enum itemStatuses {
+    // @notice itemStatuses enum
+    enum itemStatuses {
 		Open,
 		Done,
 		Disputed,
 		Resolved,
 		Cancelled
-	}
+    }
 
-	/// @param_dealStruct The deal object.
-	/// @param_status Coming from itemStatuses enum.
-	/// Statuses: Open, Done, Disputed, Resolved, Cancelled
-	/// @param_hashtagFee The value of the hashtag fee is stored in the deal. This prevents the hashtagmaintainer to influence an existing deal when changing the hashtag fee.
-	/// @param_dealValue The value of the deal (SWT)
-	/// @param_provider The address of the provider
+    /// @param_dealStruct The deal object.
+    /// @param_status Coming from itemStatuses enum.
+    /// Statuses: Open, Done, Disputed, Resolved, Cancelled
+    /// @param_hashtagFee The value of the hashtag fee is stored in the deal. This prevents the hashtagmaintainer to influence an existing deal when changing the hashtag fee.
+    /// @param_dealValue The value of the deal (SWT)
+    /// @param_provider The address of the provider
 	/// @param_deals Array of deals made by this hashtag
 
-	struct itemStruct {
-		itemStatuses status;
-		uint hashtagFee;
-		uint itemValue;
-		uint providerRep;
-		uint seekerRep;
-		address providerAddress;
-		address seekerAddress;
-		string ipfsMetadata;
-	}
+    struct itemStruct {
+    itemStatuses status;
+    uint hashtagFee;
+    uint itemValue;
+    uint providerRep;
+    uint seekerRep;
+    address providerAddress;
+    address seekerAddress;
+    string ipfsMetadata;
+    }
 
-	mapping(bytes32=>itemStruct) items;
+    mapping(bytes32=>itemStruct) items;
 
-	/// @dev Event Seeker reputation token is minted and sent
-	event SeekerRepAdded(address to, uint amount);
+    /// @dev Event Seeker reputation token is minted and sent
+    event SeekerRepAdded(address to, uint amount);
 
     /// @dev Event Provider reputation token is minted and sent
     event ProviderRepAdded(address to, uint amount);
 
-	/// @dev Event NewDealForTwo - This event is fired when a new deal for two is created.
-	event NewItemForTwo(address owner, bytes32 itemHash, string ipfsMetadata, uint itemValue, uint hashtagFee, uint totalValue, uint seekerRep);
+    /// @dev Event NewDealForTwo - This event is fired when a new deal for two is created.
+    event NewItemForTwo(address owner, bytes32 itemHash, string ipfsMetadata, uint itemValue, uint hashtagFee, uint totalValue, uint seekerRep);
 
-	/// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
-	event FundDeal(address seeker, address provider, bytes32 itemHash);
+    /// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
+    event FundDeal(address seeker, address provider, bytes32 itemHash);
 
-	/// @dev DealStatusChange - This event is fired when a deal status is updated.
-	event ItemStatusChange(address owner, bytes32 itemHash, itemStatuses newstatus, string ipfsMetadata);
+    /// @dev DealStatusChange - This event is fired when a deal status is updated.
+    event ItemStatusChange(address owner, bytes32 itemHash, itemStatuses newstatus, string ipfsMetadata);
 
-	/// @dev ReceivedApproval - This event is fired when minime sends approval.
-	event ReceivedApproval(address sender, uint amount, address fromcontract, bytes extraData);
+    /// @dev ReceivedApproval - This event is fired when minime sends approval.
+    event ReceivedApproval(address sender, uint amount, address fromcontract, bytes extraData);
 
-	/// @dev hashtagChanged - This event is fired when any of the metadata is changed.
-	event HashtagChanged(string _change);
+    /// @dev hashtagChanged - This event is fired when any of the metadata is changed.
+    event HashtagChanged(string _change);
 
-	/// @notice The function that creates the hashtag
-	constructor(address _token, string _hashtagName, uint _hashtagFee, string _ipfsMetadataHash) public {
+    /// @notice The function that creates the hashtag
+    constructor(address _token, string _hashtagName, uint _hashtagFee, string _ipfsMetadataHash) public {
 
-		/// @notice The name of the hashtag is set
-		hashtagName = _hashtagName;
+    /// @notice The name of the hashtag is set
+    hashtagName = _hashtagName;
 
-		/// @notice The seeker reputation token is created
-		SeekerRep = new DetailedERC20("SeekerRep","SWRS", 0);
-		
-		/// @notice The provider reputation token is created
-		ProviderRep = new DetailedERC20("ProviderRep","SWRP", 0);
+    /// @notice The seeker reputation token is created
+    SeekerRep = new DetailedERC20("SeekerRep", "SWRS", 0);
 
-		/// @notice SWT token is added
-		token = IMiniMeToken(_token);
+    /// @notice The provider reputation token is created
+    ProviderRep = new DetailedERC20("ProviderRep", "SWRP", 0);
 
-		/// Metadata added
-		metadataHash = _ipfsMetadataHash;
+    /// @notice SWT token is added
+    token = IMiniMeToken(_token);
 
-		/// hashtag fee is set to ...
-		hashtagFee = _hashtagFee;
+    /// Metadata added
+    metadataHash = _ipfsMetadataHash;
 
-		/// Hashtag fee payout address is set
-		/// First time we set it to msg.sender
-		payoutAddress = msg.sender;
-	}
+    /// hashtag fee is set to ...
+    hashtagFee = _hashtagFee;
 
-	function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData) public {
-		require(address(this).call(_extraData));
-		emit ReceivedApproval( _msgsender,  _amount,  _fromcontract, _extraData);
-	}
+    /// Hashtag fee payout address is set
+    /// First time we set it to msg.sender
+    payoutAddress = msg.sender;
+    }
 
-	/// @notice The Hashtag owner can always update the payout address.
-	function setPayoutAddress(address _payoutaddress) public onlyOwner {
-		payoutAddress = _payoutaddress;
-		emit HashtagChanged("Payout address changed");
-	}
+    function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData) public {
+    require(address(this).call(_extraData));
+    emit ReceivedApproval( _msgsender,  _amount,  _fromcontract, _extraData);
+    }
 
-	/// @notice The Hashtag owner can always update the metadata for the hashtag.
-	function setMetadataHash(string _ipfsMetadataHash ) public onlyOwner  {
-		metadataHash = _ipfsMetadataHash;
-		emit HashtagChanged("MetaData hash changed");
-	}
+    /// @notice The Hashtag owner can always update the payout address.
+    function setPayoutAddress(address _payoutaddress) public onlyOwner {
+    payoutAddress = _payoutaddress;
+    emit HashtagChanged("Payout address changed");
+    }
 
-	/// @notice The Hashtag owner can always change the hashtag fee amount
-	function setHashtagFee(uint _newHashtagFee) public onlyOwner {
-		hashtagFee = _newHashtagFee;
-		emit HashtagChanged("Hashtag fee amount changed");
-	}
+    /// @notice The Hashtag owner can always update the metadata for the hashtag.
+    function setMetadataHash(string _ipfsMetadataHash ) public onlyOwner  {
+    metadataHash = _ipfsMetadataHash;
+    emit HashtagChanged("MetaData hash changed");
+    }
 
-	/// @notice The item making stuff
+    /// @notice The Hashtag owner can always change the hashtag fee amount
+    function setHashtagFee(uint _newHashtagFee) public onlyOwner {
+    hashtagFee = _newHashtagFee;
+    emit HashtagChanged("Hashtag fee amount changed");
+    }
 
-	/// @notice The create item function
-	function newItem(
-		bytes32 _itemHash, 
-		uint _itemValue, 
-		string _ipfsMetadata
+    /// @notice The item making stuff
+
+    /// @notice The create item function
+    function newItem(
+    bytes32 _itemHash, 
+    uint _itemValue, 
+    string _ipfsMetadata
     ) public {
-		// make sure there is enough to pay the hashtag fee later on
-		require (hashtagFee / 2 <= _itemValue); // Overflow protection
-		
-		// fund this deal
-		uint totalValue = _itemValue + hashtagFee / 2;
-		
-        require ( _itemValue + hashtagFee / 2 >= _itemValue); //overflow protection
+    // make sure there is enough to pay the hashtag fee later on
+    require (hashtagFee / 2 <= _itemValue); // Overflow protection
 
-		// if deal already exists don't allow to overwrite it
-		require (items[_itemHash].hashtagFee == 0 && items[_itemHash].itemValue == 0);
+    // fund this deal
+    uint totalValue = _itemValue + hashtagFee / 2;
 
-		require (token.transferFrom(tx.origin,this, _itemValue + hashtagFee / 2));
+    require ( _itemValue + hashtagFee / 2 >= _itemValue); //overflow protection
 
-		// if it's funded - fill in the details
-		items[_itemHash] = itemStruct(itemStatuses.Open,
-    		hashtagFee,
-    		_itemValue,
-    		0,
-    		SeekerRep.balanceOf(tx.origin),
-    		0x0,
-    		tx.origin,
-    		_ipfsMetadata);
-    
-        emit NewItemForTwo(tx.origin,_itemHash,_ipfsMetadata, _itemValue, hashtagFee, totalValue, SeekerRep.balanceOf(tx.origin));
+    // if deal already exists don't allow to overwrite it
+    require (items[_itemHash].hashtagFee == 0 && items[_itemHash].itemValue == 0);
 
-	}
+    require (token.transferFrom(tx.origin,this, _itemValue + hashtagFee / 2));
 
-	/// @notice Provider has to fund the deal
-	function fundDeal(string _itemId) public {
+    // if it's funded - fill in the details
+    items[_itemHash] = itemStruct(itemStatuses.Open,
+    hashtagFee,
+    _itemValue,
+    0,
+    SeekerRep.balanceOf(tx.origin),
+    0x0,
+    tx.origin,
+    _ipfsMetadata);
 
-		bytes32 itemHash = keccak256(_itemId);
+    emit NewItemForTwo(tx.origin,_itemHash,_ipfsMetadata, _itemValue, hashtagFee, totalValue, SeekerRep.balanceOf(tx.origin));
 
-		itemStruct storage d = items[itemHash];
+    }
 
-		/// @dev only allow open deals to be funded
-		require (d.status == itemStatuses.Open);
+    /// @notice Provider has to fund the deal
+    function fundDeal(string _itemId) public {
 
-		/// @dev if the provider is filled in - the deal was already funded
-		require (d.providerAddress == 0x0);
+    bytes32 itemHash = keccak256(_itemId);
 
-		/// @dev put the tokens from the provider on the deal
-		require (d.itemValue + d.hashtagFee / 2 >= d.itemValue);
-		require (token.transferFrom(tx.origin,this,d.itemValue + d.hashtagFee / 2));
+    itemStruct storage d = items[itemHash];
 
-		/// @dev fill in the address of the provider ( to payout the deal later on )
-		items[itemHash].providerAddress = tx.origin;
-        items[itemHash].providerRep = ProviderRep.balanceOf(tx.origin);
+    /// @dev only allow open deals to be funded
+    require (d.status == itemStatuses.Open);
 
-		emit FundDeal(items[itemHash].seekerAddress, items[itemHash].providerAddress, itemHash);
-	}
+    /// @dev if the provider is filled in - the deal was already funded
+    require (d.providerAddress == 0x0);
 
-	/// @notice The payout function can only be called by the deal owner.
-	function payout(bytes32 _itemHash) public {
+    /// @dev put the tokens from the provider on the deal
+    require (d.itemValue + d.hashtagFee / 2 >= d.itemValue);
+    require (token.transferFrom(tx.origin,this,d.itemValue + d.hashtagFee / 2));
 
-		require(items[_itemHash].seekerAddress == msg.sender);
+    /// @dev fill in the address of the provider ( to payout the deal later on )
+    items[itemHash].providerAddress = tx.origin;
+    items[itemHash].providerRep = ProviderRep.balanceOf(tx.origin);
 
-		itemStruct storage d = items[_itemHash];
+    emit FundDeal(items[itemHash].seekerAddress, items[itemHash].providerAddress, itemHash);
+    }
 
-		/// @dev you can only payout open deals
-		require (d.status == itemStatuses.Open);
+    /// @notice The payout function can only be called by the deal owner.
+    function payout(bytes32 _itemHash) public {
 
-		/// @dev pay out hashtagFee
-		require (token.transfer(payoutAddress,d.hashtagFee));
+    require(items[_itemHash].seekerAddress == msg.sender);
 
-		/// @dev pay out the provider
-		require (token.transfer(d.providerAddress,d.itemValue * 2));
+    itemStruct storage d = items[_itemHash];
 
-		/// @dev mint REP for Provider
-		ProviderRep.mint(d.providerAddress, 5);
-		emit ProviderRepAdded(d.providerAddress, 5);
+    /// @dev you can only payout open deals
+    require (d.status == itemStatuses.Open);
 
-		/// @dev mint REP for Seeker
-		SeekerRep.mint(d.seekerAddress, 5);
-		emit SeekerRepAdded(d.seekerAddress, 5);
+    /// @dev pay out hashtagFee
+    require (token.transfer(payoutAddress,d.hashtagFee));
 
-		/// @dev mark the deal as done
-		items[_itemHash].status = itemStatuses.Done;
-		emit ItemStatusChange(d.seekerAddress,_itemHash,itemStatuses.Done,d.ipfsMetadata);
+    /// @dev pay out the provider
+    require (token.transfer(d.providerAddress,d.itemValue * 2));
 
-	}
+    /// @dev mint REP for Provider
+    ProviderRep.mint(d.providerAddress, 5);
+    emit ProviderRepAdded(d.providerAddress, 5);
 
-	/// @notice Read the details of a deal
-	function readDeal(bytes32 _itemHash)
-		constant public returns(
-		    itemStatuses status, 
-		    uint hashtagFee,
-			uint itemValue,
-			uint providerRep,
-		    uint seekerRep,
-			address providerAddress,
-			string ipfsMetadata)
-	{
-		return (
-		    items[_itemHash].status,
-		    items[_itemHash].hashtagFee,
-		    items[_itemHash].itemValue,
-		    items[_itemHash].providerRep,
-		    items[_itemHash].seekerRep,
-		    items[_itemHash].providerAddress,
-		    items[_itemHash].ipfsMetadata);
-	}
+    /// @dev mint REP for Seeker
+    SeekerRep.mint(d.seekerAddress, 5);
+    emit SeekerRepAdded(d.seekerAddress, 5);
+
+    /// @dev mark the deal as done
+    items[_itemHash].status = itemStatuses.Done;
+    emit ItemStatusChange(d.seekerAddress,_itemHash,itemStatuses.Done,d.ipfsMetadata);
+
+    }
+
+    /// @notice Read the details of a deal
+    function readDeal(bytes32 _itemHash)
+    constant public returns(
+    itemStatuses status, 
+    uint hashtagFee,
+    uint itemValue,
+    uint providerRep,
+    uint seekerRep,
+    address providerAddress,
+    string ipfsMetadata)
+    {
+    return (
+    items[_itemHash].status,
+    items[_itemHash].hashtagFee,
+    items[_itemHash].itemValue,
+    items[_itemHash].providerRep,
+    items[_itemHash].seekerRep,
+    items[_itemHash].providerAddress,
+    items[_itemHash].ipfsMetadata);
+    }
 }

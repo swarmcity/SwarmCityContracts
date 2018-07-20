@@ -1,11 +1,8 @@
 
 var MiniMeTokenFactory = artifacts.require("MiniMeTokenFactory");
 var MiniMeToken = artifacts.require("MiniMeToken");
-var RepToken = artifacts.require("DetailedERC20");
+var DetailedERC20 = artifacts.require("DetailedERC20");
 var Hashtag = artifacts.require("HashtagSimpleDeal");
-var utility = require('../utility.js')();
-const ethUtil = require('ethereumjs-util');
-const ethCrypto = require('eth-crypto');
 
 contract('HashtagSimpleDeal', (accounts) => {
 
@@ -24,7 +21,6 @@ contract('HashtagSimpleDeal', (accounts) => {
     var itemValue = 1200000000000000000; // The value of the item being requested
     var itemIpfs = "QmPsUmJTEHEHtPetyFsKaarwVWwBMJiYhvcLEQz5kWAJZX"; // The textual description of what is requested
     var requestValue = itemValue + hashtagFee / 2;
-
 
     describe('Token Factory Deploy', function () {
         it("should deploy MiniMeTokenFactory contract", function (done) {
@@ -92,8 +88,7 @@ contract('HashtagSimpleDeal', (accounts) => {
 
         it("should create Seeker reputation token", function (done) {
             hashtagContract.SeekerRep.call().then(function(res){
-                //console.log('ProviderRep: ', res);
-                swrsToken = res;
+                swrsToken = res.toString('hex');
                 assert.isNotNull(swrsToken);
                 done();
             });
@@ -101,8 +96,7 @@ contract('HashtagSimpleDeal', (accounts) => {
 
         it("should create Provider reputation token", function (done) {
             hashtagContract.ProviderRep.call().then(function(res){
-                //console.log('ProviderRep: ', res);
-                swrpToken = res;
+                swrpToken = res.toString('hex');
                 assert.isNotNull(swrpToken);
                 done();
             });
@@ -124,16 +118,20 @@ contract('HashtagSimpleDeal', (accounts) => {
             });
         });
 
-        // it("should see 0 reptutation on the Provider rep token for both seeker and provider", function (done) {
-        //     var repContractInstance = web3.eth.contract(RepToken.abi).at(swrpToken);
-        //     repContractInstance.balanceOf(seeker).then(function(balance){
-        //         console.log('Seeker balance in Provider rep token: ', balance);
-        //     });
-        //     // // repContractInstance.balanceOf(provider).then(function(res){
-        //     //     console.log('Provider balance in Provider rep token: ', res);
-        //     // });
-        //     done();
+        // it("should have no reputation token balance for Seeker account", async function(done) {
+        //     let repToken = artifacts.require("DetailedERC20");
+        //     let repTokenInstance = await repToken.at(swrsToken);
+        //     var repBalance = await repTokenInstance.balanceOf(seeker);
+        //     assert.equal(repBalance.toNumber(), 0, "Seeker reputation balance not correct after hashtag creation");
+        //     await done();
+        // });
 
+        // it("should have no reputation token balance for Provider account", async function(done) {
+        //     let repToken = artifacts.require("DetailedERC20");
+        //     let repTokenInstance = await repToken.at(swrpToken);
+        //     var repBalance = await repTokenInstance.balanceOf(provider);
+        //     assert.equal(repBalance.toNumber(), 0, "Provider reputation balance not correct after hashtag creation");
+        //     await done();
         // });
 
     });
@@ -245,7 +243,6 @@ contract('HashtagSimpleDeal', (accounts) => {
         });
 
         it("should set Provider address in Item", function(done) {
-            var hashtagContractInstance = web3.eth.contract(hashtagContract.abi).at(hashtagContract.address);
             hashtagContract.readDeal(itemHash).then(function(res) {
                 //console.log('readdeal: ',res[5]);
                 assert.equal(res[5], provider, "Provider address is not correct");
@@ -257,7 +254,6 @@ contract('HashtagSimpleDeal', (accounts) => {
 
     describe('Payout Stage', function () {
         it("should payout the item", function(done) {
-
             hashtagContract.payout(itemHash, {from: seeker,
                 gas: 4700000
             }).then(function(res) {
@@ -292,13 +288,21 @@ contract('HashtagSimpleDeal', (accounts) => {
             });
         });
 
-    //         // it("should see reputation token balance Seeker account", function(done) {
-    //         //     swrsToken.balanceOf(seeker).then(function(balance) {
-    //         //         //assert.equal(balance.toNumber(), 100e18, "Seeker balance not correct after swt minting");
-    //         //         console.log("Seeker reptoken balance: ", balance.toNumber());
-    //         //         done();
-    //         //     });
-    //         // });
+        it("should see reputation token balance Seeker account increase", async function() {
+            let repToken = artifacts.require("DetailedERC20");
+            let repTokenInstance = await repToken.at(swrsToken);
+            var repBalance = await repTokenInstance.balanceOf(seeker);
+            assert.equal(repBalance.toNumber(), 5, "Seeker reputation balance not correct after payout");
+            //done();
+        });
+
+        it("should see reputation token balance Provider account increase", async function() {
+            let repToken = artifacts.require("DetailedERC20");
+            let repTokenInstance = await repToken.at(swrpToken);
+            var repBalance = await repTokenInstance.balanceOf(provider);
+            assert.equal(repBalance.toNumber(), 5, "Provider reputation balance not correct after payout");
+            //done();
+        });
 
         it("should see token balance Maintainer account increase", function(done) {
             swtToken.balanceOf(maintainer).then(function(balance) {
