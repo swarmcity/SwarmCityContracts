@@ -36,7 +36,7 @@ contract HashtagList is IPFSEvents, Ownable {
         c.hashtagMetaIPFS = _hashtagMetaIPFS;
         c.hashtagAddress = _hashtagAddress;
         c.hashtagShown = true; 
-        HashtagAdded(_hashtagName, _hashtagMetaIPFS, _hashtagAddress);
+        emit HashtagAdded(_hashtagName, _hashtagMetaIPFS, _hashtagAddress);
     }
 
     function readHashtag(uint _index) constant public returns (
