@@ -450,7 +450,7 @@ contract('HashtagSimpleDeal', (accounts) => {
              });
         });
 
-        it("should see token balance Seeker account decrease", function(done) {
+        it("should see token balance Seeker account change", function(done) {
             swtToken.balanceOf(seeker).then(function(balance) {
                 //console.log(balance.toNumber());
                 assert.equal(balance.toNumber(), 96800000000000000000, "Seeker balance not correct after swt minting");
@@ -458,7 +458,7 @@ contract('HashtagSimpleDeal', (accounts) => {
             });
         });
 
-        it("should see token balance Provider account decrease", function(done) {
+        it("should see token balance Provider account change", function(done) {
             swtToken.balanceOf(provider).then(function(balance) {
                 //console.log(balance.toNumber());
                 assert.equal(balance.toNumber(), 101700000000000000000, "Provider balance not correct after swt minting");
