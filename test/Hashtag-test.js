@@ -444,7 +444,7 @@ contract('HashtagSimpleDeal', (accounts) => {
 
          it("should find the Item status 'resolved' on the Hashtag", function(done) {
             hashtagContract.readDeal(web3.sha3(itemId2)).then(function(res) {
-                console.log(res[0].toNumber());
+                //console.log(res[0].toNumber());
                 assert.equal(res[0].toNumber(), 3, "Item status error");
                 done();
              });
