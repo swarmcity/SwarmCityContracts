@@ -69,7 +69,7 @@ contract HashtagSimpleDeal is Ownable {
     event NewItemForTwo(address owner, bytes32 itemHash, string ipfsMetadata, uint itemValue, uint hashtagFee, uint totalValue, uint seekerRep);
 
     /// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
-    event FundDeal(address seeker, address provider, bytes32 itemHash);
+    event FundItem(address seeker, address provider, bytes32 itemHash);
 
     /// @dev DealStatusChange - This event is fired when a deal status is updated.
     event ItemStatusChange(address owner, bytes32 itemHash, itemStatuses newstatus, string ipfsMetadata);
@@ -83,27 +83,27 @@ contract HashtagSimpleDeal is Ownable {
     /// @notice The function that creates the hashtag
     constructor(address _token, string _hashtagName, uint _hashtagFee, string _ipfsMetadataHash) public {
 
-    /// @notice The name of the hashtag is set
-    hashtagName = _hashtagName;
+        /// @notice The name of the hashtag is set
+        hashtagName = _hashtagName;
 
-    /// @notice The seeker reputation token is created
-    SeekerRep = new DetailedERC20("SeekerRep", "SWRS", 0);
+        /// @notice The seeker reputation token is created
+        SeekerRep = new DetailedERC20("SeekerRep", "SWRS", 0);
 
-    /// @notice The provider reputation token is created
-    ProviderRep = new DetailedERC20("ProviderRep", "SWRP", 0);
+        /// @notice The provider reputation token is created
+        ProviderRep = new DetailedERC20("ProviderRep", "SWRP", 0);
 
-    /// @notice SWT token is added
-    token = IMiniMeToken(_token);
+        /// @notice SWT token is added
+        token = IMiniMeToken(_token);
 
-    /// Metadata added
-    metadataHash = _ipfsMetadataHash;
+        /// Metadata added
+        metadataHash = _ipfsMetadataHash;
 
-    /// hashtag fee is set to ...
-    hashtagFee = _hashtagFee;
+        /// hashtag fee is set to ...
+        hashtagFee = _hashtagFee;
 
-    /// Hashtag fee payout address is set
-    /// First time we set it to msg.sender
-    payoutAddress = msg.sender;
+        /// Hashtag fee payout address is set
+        /// First time we set it to msg.sender
+        payoutAddress = msg.sender;
     }
 
     function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData) public {
@@ -165,7 +165,7 @@ contract HashtagSimpleDeal is Ownable {
     }
 
     /// @notice Provider has to fund the deal
-    function fundDeal(string _itemId) public {
+    function fundItem(string _itemId) public {
 
         bytes32 itemHash = keccak256(_itemId);
 
@@ -185,11 +185,11 @@ contract HashtagSimpleDeal is Ownable {
         items[itemHash].providerAddress = tx.origin;
         items[itemHash].providerRep = ProviderRep.balanceOf(tx.origin);
 
-        emit FundDeal(items[itemHash].seekerAddress, items[itemHash].providerAddress, itemHash);
+        emit FundItem(items[itemHash].seekerAddress, items[itemHash].providerAddress, itemHash);
         }
 
-        /// @notice The payout function can only be called by the deal owner.
-        function payout(bytes32 _itemHash) public {
+    /// @notice The payout function can only be called by the deal owner.
+    function payoutItem(bytes32 _itemHash) public {
 
         require(items[_itemHash].seekerAddress == msg.sender);
 
@@ -199,7 +199,7 @@ contract HashtagSimpleDeal is Ownable {
         require (d.status == itemStatuses.Open);
 
         /// @dev pay out hashtagFee
-        require (token.transfer(payoutAddress,d.hashtagFee));
+        require (token.transfer(payoutAddress, d.hashtagFee));
 
         /// @dev pay out the provider
         require (token.transfer(d.providerAddress,d.itemValue * 2));
@@ -216,6 +216,58 @@ contract HashtagSimpleDeal is Ownable {
         items[_itemHash].status = itemStatuses.Done;
         emit ItemStatusChange(d.seekerAddress,_itemHash,itemStatuses.Done,d.ipfsMetadata);
 
+    }
+
+    /// @notice The Cancel Item Function
+    /// @notice Half of the HashtagFee is sent to PayoutAddress
+    function cancelItem(bytes32 _itemHash) public {
+        itemStruct storage c = items[_itemHash];
+        if(c.itemValue > 0 && c.providerAddress == 0x0 && c.status == itemStatuses.Open)
+        {
+            // @dev The Seeker pays half of the hashtagFee to the Maintainer
+            require(token.transfer(payoutAddress, c.hashtagFee / 2));
+
+            // @dev The Seeker gets the remaining value
+            require(token.transfer(c.seekerAddress, c.itemValue));
+
+            items[_itemHash].status = itemStatuses.Cancelled;
+
+            emit ItemStatusChange(msg.sender, _itemHash, itemStatuses.Cancelled, c.ipfsMetadata);
+        }
+    }
+
+    /// @notice The Dispute Item Function
+    /// @notice The Seeker or Provider can dispute an item, only the Maintainer can resolve it.
+    function disputeItem(bytes32 _itemHash) public {
+        itemStruct storage c = items[_itemHash];
+        require (c.status == itemStatuses.Open, 'item not open');
+
+        if (msg.sender == c.seekerAddress) {
+            /// @dev Seeker starts the dispute
+            /// @dev Only items with Provider set can be disputed
+            require (c.providerAddress != 0x0, 'provider not 0 not open');
+        } else {
+            /// @dev Provider starts dispute
+            require (c.providerAddress == msg.sender, 'sender is provider');
+        }
+        /// @dev Set itemStatus to Disputed
+        items[_itemHash].status = itemStatuses.Disputed;
+        emit ItemStatusChange(msg.sender, _itemHash, itemStatuses.Disputed, c.ipfsMetadata);
+    } 
+
+    /// @notice The Resolve Item Function ♡
+    /// @notice The Maintainer resolves the disputed item.
+    function resolveItem(bytes32 _itemHash, uint _seekerFraction) public {
+        itemStruct storage c = items[_itemHash];
+        require (msg.sender == payoutAddress);
+        require (c.status == itemStatuses.Disputed);
+        require (token.transfer(payoutAddress, c.hashtagFee));
+        require (token.transfer(c.seekerAddress, _seekerFraction));
+        require (_seekerFraction <= c.itemValue - c.hashtagFee / 2);
+        require (c.itemValue * 2 - _seekerFraction <= c.itemValue * 2);
+        require (token.transfer(c.providerAddress, c.itemValue * 2 - _seekerFraction));
+        items[_itemHash].status = itemStatuses.Resolved;
+        emit ItemStatusChange(c.seekerAddress, _itemHash, itemStatuses.Resolved, c.ipfsMetadata);
     }
 
     /// @notice Read the details of a deal
