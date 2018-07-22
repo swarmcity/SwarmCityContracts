@@ -148,7 +148,11 @@ contract HashtagSimpleDeal is Ownable {
         // if deal already exists don't allow to overwrite it
         require (items[_itemHash].hashtagFee == 0 && items[_itemHash].itemValue == 0);
 
+        // @dev The Seeker transfers SWT to the hashtagcontract
         require (token.transferFrom(tx.origin,this, _itemValue + hashtagFee / 2));
+
+        // @dev The Seeker pays half of the hashtagFee to the Maintainer
+        require(token.transfer(payoutAddress, hashtagFee / 2));
 
         // if it's funded - fill in the details
         items[_itemHash] = itemStruct(itemStatuses.Open,
@@ -169,17 +173,20 @@ contract HashtagSimpleDeal is Ownable {
 
         bytes32 itemHash = keccak256(_itemId);
 
-        itemStruct storage d = items[itemHash];
+        itemStruct storage c = items[itemHash];
 
         /// @dev only allow open deals to be funded
-        require (d.status == itemStatuses.Open);
+        require (c.status == itemStatuses.Open);
 
         /// @dev if the provider is filled in - the deal was already funded
-        require (d.providerAddress == 0x0);
+        require (c.providerAddress == 0x0);
 
         /// @dev put the tokens from the provider on the deal
-        require (d.itemValue + d.hashtagFee / 2 >= d.itemValue);
-        require (token.transferFrom(tx.origin,this,d.itemValue + d.hashtagFee / 2));
+        require (c.itemValue + c.hashtagFee / 2 >= c.itemValue);
+        require (token.transferFrom(tx.origin,this,c.itemValue + c.hashtagFee / 2));
+
+        // @dev The Seeker pays half of the hashtagFee to the Maintainer
+        require(token.transfer(payoutAddress, c.hashtagFee / 2));
 
         /// @dev fill in the address of the provider ( to payout the deal later on )
         items[itemHash].providerAddress = tx.origin;
@@ -191,30 +198,28 @@ contract HashtagSimpleDeal is Ownable {
     /// @notice The payout function can only be called by the deal owner.
     function payoutItem(bytes32 _itemHash) public {
 
-        require(items[_itemHash].seekerAddress == msg.sender);
+        itemStruct storage c = items[_itemHash];
 
-        itemStruct storage d = items[_itemHash];
+        /// @dev Only Seeker can payout
+        require(c.seekerAddress == msg.sender);
 
         /// @dev you can only payout open deals
-        require (d.status == itemStatuses.Open);
-
-        /// @dev pay out hashtagFee
-        require (token.transfer(payoutAddress, d.hashtagFee));
+        require (c.status == itemStatuses.Open);
 
         /// @dev pay out the provider
-        require (token.transfer(d.providerAddress,d.itemValue * 2));
+        require (token.transfer(c.providerAddress,c.itemValue * 2));
 
         /// @dev mint REP for Provider
-        ProviderRep.mint(d.providerAddress, 5);
-        emit ProviderRepAdded(d.providerAddress, 5);
+        ProviderRep.mint(c.providerAddress, 5);
+        emit ProviderRepAdded(c.providerAddress, 5);
 
         /// @dev mint REP for Seeker
-        SeekerRep.mint(d.seekerAddress, 5);
-        emit SeekerRepAdded(d.seekerAddress, 5);
+        SeekerRep.mint(c.seekerAddress, 5);
+        emit SeekerRepAdded(c.seekerAddress, 5);
 
         /// @dev mark the deal as done
         items[_itemHash].status = itemStatuses.Done;
-        emit ItemStatusChange(d.seekerAddress,_itemHash,itemStatuses.Done,d.ipfsMetadata);
+        emit ItemStatusChange(c.seekerAddress,_itemHash,itemStatuses.Done,c.ipfsMetadata);
 
     }
 
@@ -224,8 +229,6 @@ contract HashtagSimpleDeal is Ownable {
         itemStruct storage c = items[_itemHash];
         if(c.itemValue > 0 && c.providerAddress == 0x0 && c.status == itemStatuses.Open)
         {
-            // @dev The Seeker pays half of the hashtagFee to the Maintainer
-            require(token.transfer(payoutAddress, c.hashtagFee / 2));
 
             // @dev The Seeker gets the remaining value
             require(token.transfer(c.seekerAddress, c.itemValue));
@@ -261,9 +264,7 @@ contract HashtagSimpleDeal is Ownable {
         itemStruct storage c = items[_itemHash];
         require (msg.sender == payoutAddress);
         require (c.status == itemStatuses.Disputed);
-        require (token.transfer(payoutAddress, c.hashtagFee));
         require (token.transfer(c.seekerAddress, _seekerFraction));
-        require (_seekerFraction <= c.itemValue - c.hashtagFee / 2);
         require (c.itemValue * 2 - _seekerFraction <= c.itemValue * 2);
         require (token.transfer(c.providerAddress, c.itemValue * 2 - _seekerFraction));
         items[_itemHash].status = itemStatuses.Resolved;
