@@ -43,9 +43,14 @@ contract HashtagList is IPFSEvents, Ownable {
         string hashtagName,
         string hashtagMetaIPFS,
         address hashtagAddress,
-        bool hashtagShown) {
+        bool hashtagShown) 
+        {
         hashtagListItem storage c = hashtagListArray[_index];
-        return (c.hashtagName, c.hashtagMetaIPFS, c.hashtagAddress, c.hashtagShown);
+        return (
+        c.hashtagName, 
+        c.hashtagMetaIPFS, 
+        c.hashtagAddress, 
+        c.hashtagShown);
     }
 
     function numberOfHashtags() view public returns (uint) {

@@ -3,6 +3,7 @@ var MiniMeTokenFactory = artifacts.require("MiniMeTokenFactory");
 var MiniMeToken = artifacts.require("MiniMeToken");
 var DetailedERC20 = artifacts.require("DetailedERC20");
 var Hashtag = artifacts.require("HashtagSimpleDeal");
+var HashtagList = artifacts.require("HashtagList");
 const ipfs = require("nano-ipfs-store").at("https://ipfs.infura.io:5001");
 const uuid = require("uuid");
 
@@ -10,6 +11,7 @@ contract('HashtagSimpleDeal', (accounts) => {
 
     var miniMeTokenFactory; // The fake SWT factory
     var swtToken; // The fake SWT token
+    var hashtagList; // The hashtagIndexer contract
     var hashtagContract; // The SimpleDeal hashtag contract
     var seeker = accounts[1]; // The "Seeker" account
     var provider = accounts[2]; // The "Provider" account
@@ -50,10 +52,17 @@ contract('HashtagSimpleDeal', (accounts) => {
         });
     });
 
+    describe('Staging: HashtagList Deploy', function() {
+        it("Should deploy HashtagList contract", async function () {
+            hashtagList = await HashtagList.new();
+            assert.isNotNull(hashtagList);
+        })
+    })
+
     describe('Staging: Hashtag Deploy', function() {
         it("should deploy a Hashtag", async function () {
             var hashtagMetaJson = {
-                "name": "Settler",
+                "hashtagName": "Settler",
                 "hashtagFee": 600000000000000000,
             };
         
@@ -61,11 +70,30 @@ contract('HashtagSimpleDeal', (accounts) => {
 
             hashtagContract = await Hashtag.new(
                 swtToken.address, 
-                "HashtagSimpleDealTest", 
+                hashtagMetaJson.hashtagName, 
                 hashtagMetaJson.hashtagFee, 
                 hashtagMetaHash);
 
             assert.isNotNull(hashtagContract);
+        });
+
+        it('should add new hashtag to hashtagList', async function () {
+            var hashtagIpfs = await hashtagContract.metadataHash.call();
+
+            var hashtagMetaIpfs = await ipfs.cat(hashtagIpfs);
+            
+            var hashtagMetaJson = JSON.parse(hashtagMetaIpfs);
+
+            var hashtagIpfs = await hashtagContract.metadataHash.call();
+            var result = await hashtagList.addHashtag(hashtagMetaJson.hashtagName, hashtagIpfs, hashtagContract.address, {
+                gas: 4700000,
+                from: accounts[0]
+              });
+            //console.log('added hashtag: ', result);
+            var hashtagAmount = await hashtagList.numberOfHashtags.call();
+            var hashtagOne = await hashtagList.readHashtag(0);
+            //console.log('Hashtag read: ', hashtagOne[2], hashtagContract.address);
+            assert.equal(hashtagOne[2], hashtagContract.address, "Hashtag not set in HashtagList");
         });
 
         it("should create Seeker reputation token", async function () {
