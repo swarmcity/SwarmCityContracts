@@ -1,7 +1,5 @@
-
 var MiniMeTokenFactory = artifacts.require("MiniMeTokenFactory");
 var MiniMeToken = artifacts.require("MiniMeToken");
-var DetailedERC20 = artifacts.require("DetailedERC20");
 var Hashtag = artifacts.require("HashtagSimpleDeal");
 var HashtagList = artifacts.require("HashtagList");
 const ipfs = require("nano-ipfs-store").at("https://ipfs.infura.io:5001");
@@ -64,6 +62,7 @@ contract('HashtagSimpleDeal', (accounts) => {
             var hashtagMetaJson = {
                 "hashtagName": "Settler",
                 "hashtagFee": 600000000000000000,
+                "description": "" 
             };
         
             var hashtagMetaHash = await ipfs.add(JSON.stringify(hashtagMetaJson));

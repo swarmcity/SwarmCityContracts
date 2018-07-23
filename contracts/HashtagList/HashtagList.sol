@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.18;
 
 /**
 *  @title Hashtag List
@@ -43,14 +43,16 @@ contract HashtagList is IPFSEvents, Ownable {
         string hashtagName,
         string hashtagMetaIPFS,
         address hashtagAddress,
-        bool hashtagShown) 
+        bool hashtagShown
+        ) 
         {
         hashtagListItem storage c = hashtagListArray[_index];
         return (
         c.hashtagName, 
         c.hashtagMetaIPFS, 
         c.hashtagAddress, 
-        c.hashtagShown);
+        c.hashtagShown
+        );
     }
 
     function numberOfHashtags() view public returns (uint) {
