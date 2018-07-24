@@ -9,7 +9,7 @@ contract('HashtagSimpleDeal', (accounts) => {
 
     var miniMeTokenFactory; // The fake SWT factory
     var swtToken; // The fake SWT token
-    var hashtagList; // The hashtagIndexer contract
+    let hashtagList; // The hashtagIndexer contract
     var hashtagContract; // The SimpleDeal hashtag contract
     var seeker = accounts[1]; // The "Seeker" account
     var provider = accounts[2]; // The "Provider" account
@@ -20,6 +20,11 @@ contract('HashtagSimpleDeal', (accounts) => {
     var currentItemHash; // the itemHash the test is currently working with
 
     describe('Staging: Token Deploy', function () {
+        it("should deploy HashtagList contract", async function () {
+            hashtagList = await HashtagList.new();
+            assert.ok(hashtagList.address);
+        });
+
         it("should deploy MiniMeTokenFactory contract", async function () {
             miniMeTokenFactory = await MiniMeTokenFactory.new();
             assert.ok(miniMeTokenFactory.address);
@@ -52,7 +57,8 @@ contract('HashtagSimpleDeal', (accounts) => {
 
     describe('Staging: HashtagList Deploy', function() {
         it("Should deploy HashtagList contract", async function () {
-            hashtagList = await HashtagList.new();
+            var hashtagListInstance = await HashtagList.new();
+            hashtagList = hashtagListInstance.address;
             assert.isNotNull(hashtagList);
         })
     })
@@ -62,37 +68,20 @@ contract('HashtagSimpleDeal', (accounts) => {
             var hashtagMetaJson = {
                 "hashtagName": "Settler",
                 "hashtagFee": 600000000000000000,
-                "description": "" 
+                "description": "",
+                "hashtagList": hashtagList 
             };
         
             var hashtagMetaHash = await ipfs.add(JSON.stringify(hashtagMetaJson));
 
             hashtagContract = await Hashtag.new(
+                hashtagList,
                 swtToken.address, 
                 hashtagMetaJson.hashtagName, 
                 hashtagMetaJson.hashtagFee, 
                 hashtagMetaHash);
 
             assert.isNotNull(hashtagContract);
-        });
-
-        it('should add new hashtag to hashtagList', async function () {
-            var hashtagIpfs = await hashtagContract.metadataHash.call();
-
-            var hashtagMetaIpfs = await ipfs.cat(hashtagIpfs);
-            
-            var hashtagMetaJson = JSON.parse(hashtagMetaIpfs);
-
-            var hashtagIpfs = await hashtagContract.metadataHash.call();
-            var result = await hashtagList.addHashtag(hashtagMetaJson.hashtagName, hashtagIpfs, hashtagContract.address, {
-                gas: 4700000,
-                from: accounts[0]
-              });
-            //console.log('added hashtag: ', result);
-            var hashtagAmount = await hashtagList.numberOfHashtags.call();
-            var hashtagOne = await hashtagList.readHashtag(0);
-            //console.log('Hashtag read: ', hashtagOne[2], hashtagContract.address);
-            assert.equal(hashtagOne[2], hashtagContract.address, "Hashtag not set in HashtagList");
         });
 
         it("should create Seeker reputation token", async function () {

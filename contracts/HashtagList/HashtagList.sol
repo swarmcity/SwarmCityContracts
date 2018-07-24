@@ -58,4 +58,8 @@ contract HashtagList is IPFSEvents, Ownable {
     function numberOfHashtags() view public returns (uint) {
         return hashtagListArray.length;
     }
+
+    function enableHashtag(uint _index) onlyOwner external {
+        hashtagListArray[_index].hashtagShown = true;
+    }
 }

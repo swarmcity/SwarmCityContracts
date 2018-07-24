@@ -12,6 +12,7 @@ pragma solidity ^0.4.23;
 
 import "./IMiniMeToken.sol";
 import "./RepToken/DetailedERC20.sol";
+import "./HashtagList/HashtagList.sol";
 
 contract HashtagSimpleDeal is Ownable {
     /// @param_name The human readable name of the hashtag
@@ -28,6 +29,7 @@ contract HashtagSimpleDeal is Ownable {
     DetailedERC20 public SeekerRep;
     address public payoutAddress;
     string public metadataHash;
+    HashtagList public hashtagList;
 
     // @notice itemStatuses enum
     enum itemStatuses {
@@ -81,8 +83,10 @@ contract HashtagSimpleDeal is Ownable {
     event HashtagChanged(string _change);
 
     /// @notice The function that creates the hashtag
-    constructor(address _token, string _hashtagName, uint _hashtagFee, string _ipfsMetadataHash) public {
+    constructor(address _hashtagList, address _token, string _hashtagName, uint _hashtagFee, string _ipfsMetadataHash) public {
 
+        /// @notice the HashtagList address is set
+        hashtagList = HashtagList(_hashtagList);
         /// @notice The name of the hashtag is set
         hashtagName = _hashtagName;
 
@@ -104,6 +108,9 @@ contract HashtagSimpleDeal is Ownable {
         /// Hashtag fee payout address is set
         /// First time we set it to msg.sender
         payoutAddress = msg.sender;
+
+        // Add the newly created hashtag to the HashtagLIst
+        hashtagList.addHashtag(_hashtagName, _ipfsMetadataHash, this);
     }
 
     function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData) public {
