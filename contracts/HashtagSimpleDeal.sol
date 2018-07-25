@@ -279,7 +279,7 @@ contract HashtagSimpleDeal is Ownable {
     }
 
     /// @notice Read the details of a deal
-    function readDeal(bytes32 _itemHash)
+    function readItem(bytes32 _itemHash)
         constant public returns(
             itemStatuses status, 
             uint hashtagFee,
