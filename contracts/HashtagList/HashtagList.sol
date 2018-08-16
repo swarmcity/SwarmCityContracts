@@ -13,19 +13,20 @@ import "../Ownable.sol";
 
 contract HashtagList is Ownable {
 
-    struct hashtagListItem {
+    struct HashtagListItem {
         string hashtagName;
         string hashtagMetaIPFS;
         address hashtagAddress;
         bool hashtagShown;
     } 
 
-    hashtagListItem[] hashtagListArray;
+    HashtagListItem[] hashtagListArray;
 
     string public hashtagListName;
     string public hashtagListIpfs;
 
     event HashtagAdded(string hashtagName, string hashtagMetaIPFS, address hashtagAddress);
+    event HashtagUpdated(string hashtagName, string hashtagMetaIPFS, address hashtagAddress);
     
     constructor(string _hashtagListName, string _hashtagListIpfs) public {
         hashtagListName = _hashtagListName;
@@ -33,47 +34,46 @@ contract HashtagList is Ownable {
     }
 
     function addHashtag(string _hashtagName, string _hashtagMetaIPFS, address _hashtagAddress) public {
-        require(bytes(_hashtagName).length != 0);
-        uint indexHashtag = hashtagListArray.length++;
-        hashtagListItem storage c = hashtagListArray[indexHashtag];
-        c.hashtagName = _hashtagName;
-        c.hashtagMetaIPFS = _hashtagMetaIPFS;
-        c.hashtagAddress = _hashtagAddress;
-        c.hashtagShown = false; 
+        require(bytes(_hashtagName).length != 0, "Hashtag name can not be empty");
+        hashtagListArray[hashtagListArray.length++] = HashtagListItem(
+            _hashtagName, 
+            _hashtagMetaIPFS, 
+            _hashtagAddress, 
+            false
+        );
         emit HashtagAdded(_hashtagName, _hashtagMetaIPFS, _hashtagAddress);
     }
 
-    function readHashtag(uint _index) constant public returns (
+    function readHashtag(uint _index) public view returns (
         string hashtagName,
         string hashtagMetaIPFS,
         address hashtagAddress,
         bool hashtagShown
-        ) 
-        {
-        hashtagListItem storage c = hashtagListArray[_index];
+    ) {
         return (
-        c.hashtagName, 
-        c.hashtagMetaIPFS, 
-        c.hashtagAddress, 
-        c.hashtagShown
+            hashtagListArray[_index].hashtagName, 
+            hashtagListArray[_index].hashtagMetaIPFS, 
+            hashtagListArray[_index].hashtagAddress, 
+            hashtagListArray[_index].hashtagShown
         );
     }
 
-    function numberOfHashtags() view public returns (uint) {
+    function numberOfHashtags() public view returns (uint) {
         return hashtagListArray.length;
     }
 
-    function updateHashtag(uint _index, string _hashtagName, string _hashtagMetaIPFS, address _hashtagAddress) onlyOwner external {
-        require(_index >= 0 && _index < hashtagListArray.length);
-        hashtagListItem storage c = hashtagListArray[_index];
-        c.hashtagName = _hashtagName;
-        c.hashtagMetaIPFS = _hashtagMetaIPFS;
-        c.hashtagAddress = _hashtagAddress;
-        c.hashtagShown = true; 
+    function updateHashtag(uint _index, string _hashtagName, string _hashtagMetaIPFS, address _hashtagAddress) external onlyOwner {
+        require(_index >= 0 && _index < hashtagListArray.length, "index must be in range");
+        hashtagListArray[_index] = HashtagListItem(
+            _hashtagName, 
+            _hashtagMetaIPFS, 
+            _hashtagAddress, 
+            false
+        );
         emit HashtagAdded(_hashtagName, _hashtagMetaIPFS, _hashtagAddress);
     }
 
-    function disableHashtag(uint _index) onlyOwner external {
+    function disableHashtag(uint _index) external onlyOwner {
         hashtagListArray[_index].hashtagShown = false;
     }
 }
