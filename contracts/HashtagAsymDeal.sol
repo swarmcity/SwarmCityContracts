@@ -40,6 +40,20 @@ contract HashtagAsymDeal is Ownable {
 		Cancelled
     }
 
+    /// @param_replyStruct The reply object.
+    /// @param_ipfsMetadata The description.
+    /// @param_replyValue The value of the reply (SWT)
+    /// @param_providerRep The rep balance of the provider in this hashtag
+
+    struct replyStruct {
+        address replier;
+        uint replyValue;
+        uint providerRep;
+        string ipfsMetadata;
+    }
+
+    mapping(bytes32=>replyStruct) replies;
+
     /// @param_dealStruct The deal object.
     /// @param_status Coming from itemStatuses enum.
     /// Statuses: Open, Done, Disputed, Resolved, Cancelled
@@ -72,6 +86,9 @@ contract HashtagAsymDeal is Ownable {
 
     /// @dev Event UpdateDealForTwo - This event is fired when a deal is updated.
     event UpdateItemForTwo(address origin, bytes32 itemHash, string ipfsMetadata, uint itemValue);
+
+    /// @dev Event ReplyItem - This event is fired when a reply is added to the deal.
+    event ReplyItem(address replier, bytes32 itemHash, string ipfsMetadata, uint replyValue);
 
     /// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
     event FundItem(address seeker, address provider, bytes32 itemHash);
@@ -164,7 +181,7 @@ contract HashtagAsymDeal is Ownable {
         // @dev The Seeker pays half of the hashtagFee to the Maintainer
         require(token.transfer(payoutAddress, hashtagFee / 2));
 
-        // if it's funded - fill in the details
+        // if tokens are transferred - fill in the details
         items[_itemHash] = itemStruct(itemStatuses.Open,
         hashtagFee,
         _itemValue,
@@ -172,10 +189,10 @@ contract HashtagAsymDeal is Ownable {
         SeekerRep.balanceOf(tx.origin),
         0x0,
         tx.origin,
-        _ipfsMetadata);
+        _ipfsMetadata
+        );
 
         emit NewItemForTwo(tx.origin,_itemHash,_ipfsMetadata, _itemValue, hashtagFee, totalValue, SeekerRep.balanceOf(tx.origin));
-
     }
 
     /// @notice Seeker can update the deal
@@ -257,7 +274,7 @@ contract HashtagAsymDeal is Ownable {
         items[itemHash].providerRep = ProviderRep.balanceOf(tx.origin);
 
         emit FundItem(items[itemHash].seekerAddress, items[itemHash].providerAddress, itemHash);
-        }
+    }
 
     /// @notice The payout function can only be called by the deal owner.
     function payoutItem(bytes32 _itemHash) public {

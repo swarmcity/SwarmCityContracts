@@ -40,6 +40,18 @@ contract HashtagSimpleDeal is Ownable {
 		Cancelled
     }
 
+    /// @param_replyStruct The reply object.
+    /// @param_replyValue The value of the reply (SWT)
+    /// @param_provider The address of the provider
+	/// @param_deals Array of deals made by this hashtag
+
+    struct replyStruct {
+        uint replyValue;
+        uint providerRep;
+        address providerAddress;
+        string ipfsMetadata;
+    }
+
     /// @param_dealStruct The deal object.
     /// @param_status Coming from itemStatuses enum.
     /// Statuses: Open, Done, Disputed, Resolved, Cancelled
@@ -57,6 +69,7 @@ contract HashtagSimpleDeal is Ownable {
         address providerAddress;
         address seekerAddress;
         string ipfsMetadata;
+        mapping(address=>replyStruct) replies;
     }
 
     mapping(bytes32=>itemStruct) items;
@@ -70,10 +83,13 @@ contract HashtagSimpleDeal is Ownable {
     /// @dev Event NewDealForTwo - This event is fired when a new deal for two is created.
     event NewItemForTwo(address owner, bytes32 itemHash, string ipfsMetadata, uint itemValue, uint hashtagFee, uint totalValue, uint seekerRep);
 
-    /// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
+    /// @dev Event ReplyItem - This event is fired when a new reply is added.
+    event ReplyItem(address provider, bytes32 itemHash, string ipfsMetadata, uint replyValue, uint providerRep);
+
+    /// @dev Event FundItem - This event is fired when a deal is been funded by a party.
     event FundItem(address seeker, address provider, bytes32 itemHash);
 
-    /// @dev DealStatusChange - This event is fired when a deal status is updated.
+    /// @dev ItemStatusChange - This event is fired when a deal status is updated.
     event ItemStatusChange(address owner, bytes32 itemHash, itemStatuses newstatus, string ipfsMetadata);
 
     /// @dev ReceivedApproval - This event is fired when minime sends approval.
@@ -172,7 +188,6 @@ contract HashtagSimpleDeal is Ownable {
         _ipfsMetadata);
 
         emit NewItemForTwo(tx.origin,_itemHash,_ipfsMetadata, _itemValue, hashtagFee, totalValue, SeekerRep.balanceOf(tx.origin));
-
     }
 
     /// @notice Provider has to fund the deal
@@ -200,7 +215,17 @@ contract HashtagSimpleDeal is Ownable {
         items[itemHash].providerRep = ProviderRep.balanceOf(tx.origin);
 
         emit FundItem(items[itemHash].seekerAddress, items[itemHash].providerAddress, itemHash);
-        }
+    }
+
+    /// @notice The reply function
+    function replyItem(bytes32 _itemHash, uint _replyValue, string _ipfsMetadata) public {
+        itemStruct storage c = items[_itemHash];
+        c.replies[msg.sender].replyValue = _replyValue;
+        c.replies[msg.sender].ipfsMetadata = _ipfsMetadata;
+        c.replies[msg.sender].providerAddress = msg.sender;
+        c.replies[msg.sender].providerRep = ProviderRep.balanceOf(msg.sender);
+        emit ReplyItem(msg.sender, _itemHash, _ipfsMetadata, _replyValue, c.replies[msg.sender].providerRep); 
+    }
 
     /// @notice The payout function can only be called by the deal owner.
     function payoutItem(bytes32 _itemHash) public {
@@ -240,7 +265,7 @@ contract HashtagSimpleDeal is Ownable {
             // @dev The Seeker gets the remaining value
             require(token.transfer(c.seekerAddress, c.itemValue));
 
-            items[_itemHash].status = itemStatuses.Cancelled;
+            delete items[_itemHash];
 
             emit ItemStatusChange(msg.sender, _itemHash, itemStatuses.Cancelled, c.ipfsMetadata);
         }
@@ -280,7 +305,7 @@ contract HashtagSimpleDeal is Ownable {
 
     /// @notice Read the details of a deal
     function readItem(bytes32 _itemHash)
-        constant public returns(
+        constant public returns (
             itemStatuses status, 
             uint hashtagFee,
             uint itemValue,
@@ -297,5 +322,18 @@ contract HashtagSimpleDeal is Ownable {
             items[_itemHash].seekerRep,
             items[_itemHash].providerAddress,
             items[_itemHash].ipfsMetadata);
+    }
+
+    /// @notice Read the details of a deal
+    function readReply(bytes32 _itemHash, address _provider) 
+        constant public returns (
+            string ipfsMetadata, 
+            uint replyValue, 
+            uint providerRep) 
+        {
+        return (
+            items[_itemHash].replies[_provider].ipfsMetadata,
+            items[_itemHash].replies[_provider].replyValue,
+            items[_itemHash].replies[_provider].providerRep);
     }
 }

@@ -21,7 +21,7 @@ contract('HashtagSimpleDeal', (accounts) => {
 
     describe('Staging: Token Deploy', function () {
         it("should deploy HashtagList contract", async function () {
-            hashtagList = await HashtagList.new();
+            hashtagList = await HashtagList.new("name", "ipfs");
             assert.ok(hashtagList.address);
         });
 
@@ -55,27 +55,19 @@ contract('HashtagSimpleDeal', (accounts) => {
         });
     });
 
-    describe('Staging: HashtagList Deploy', function() {
-        it("Should deploy HashtagList contract", async function () {
-            var hashtagListInstance = await HashtagList.new();
-            hashtagList = hashtagListInstance.address;
-            assert.isNotNull(hashtagList);
-        })
-    })
-
     describe('Staging: Hashtag Deploy', function() {
         it("should deploy a Hashtag", async function () {
             var hashtagMetaJson = {
                 "hashtagName": "Settler",
                 "hashtagFee": 600000000000000000,
                 "description": "",
-                "hashtagList": hashtagList 
+                "hashtagList": hashtagList.address 
             };
         
             var hashtagMetaHash = await ipfs.add(JSON.stringify(hashtagMetaJson));
 
             hashtagContract = await Hashtag.new(
-                hashtagList,
+                hashtagList.address,
                 swtToken.address, 
                 hashtagMetaJson.hashtagName, 
                 hashtagMetaJson.hashtagFee, 
@@ -151,14 +143,38 @@ contract('HashtagSimpleDeal', (accounts) => {
         });
 
         it("should find the Item on the Hashtag", async function () {
-            var result = await hashtagContract.readDeal(currentItemHash);
+            var result = await hashtagContract.readItem(currentItemHash);
             assert.equal(result[2].toNumber(), 30e18, "Item creation error");
+        });
+    });
+
+    describe('Happy Flow: Reply Stage', function () {
+        it("should reply to the item", async function () {
+            var itemMetaJson = {
+                "itemHash": currentItemHash,
+                "username": "Jan",
+                "avatarHash": "QmSwyxpLq1h8gJe4uSRXgyStfMSonZTKcFAL6yuPB2QLEh",
+                "address": provider, 
+                "description": "I can do that!",
+                "replyValue": 30e18 
+            };
+            var itemMetaHash = await ipfs.add(JSON.stringify(itemMetaJson));
+            result = await hashtagContract.replyItem(currentItemHash, itemMetaJson.replyValue, itemMetaHash, {from: provider,
+                gas: 4700000
+            });
+            assert.isNotNull(result);
+        });
+
+        it("should find the Reply on the Item", async function () {
+            var result = await hashtagContract.readReply(currentItemHash, provider);
+            //console.log(result);
+            assert.equal(result[1].toNumber(), 30e18, "Item creation error");
         });
     });
     
     describe('Happy Flow: Item Funding Stage', function () {
         it("should fund the new Item on the Hashtag contract", async function () {
-            var itemOnContract = await hashtagContract.readDeal(currentItemHash);
+            var itemOnContract = await hashtagContract.readItem(currentItemHash);
             var tempItem = await ipfs.cat(itemOnContract[6]); 
             var itemMetaJson = JSON.parse(tempItem);
             var hashtagContractInstance = await web3.eth.contract(hashtagContract.abi).at(hashtagContract.address);
@@ -189,7 +205,7 @@ contract('HashtagSimpleDeal', (accounts) => {
         });
 
         it("should set provider address on the Item", async function () {
-            var result = await hashtagContract.readDeal(currentItemHash);
+            var result = await hashtagContract.readItem(currentItemHash);
             assert.equal(result[5], provider, "Item creation error");
         });
     });
@@ -222,7 +238,7 @@ contract('HashtagSimpleDeal', (accounts) => {
         });
 
         it("should set itemStatus on the Item", async function () {
-            var result = await hashtagContract.readDeal(currentItemHash);
+            var result = await hashtagContract.readItem(currentItemHash);
             assert.equal(result[0].toNumber(), 1, "Item creation error");
         });
 
@@ -286,7 +302,7 @@ contract('HashtagSimpleDeal', (accounts) => {
         });
 
         it("should find the Item on the Hashtag", async function () {
-            var result = await hashtagContract.readDeal(currentItemHash);
+            var result = await hashtagContract.readItem(currentItemHash);
             assert.equal(result[2].toNumber(), 30e18, "Item creation error");
         });
     });
@@ -296,6 +312,11 @@ contract('HashtagSimpleDeal', (accounts) => {
             result = await hashtagContract.cancelItem(currentItemHash, {from: seeker,
                 gas: 4700000
             });
+        });
+
+        it("should not find the Item on the Hashtag", async function () {
+            var result = await hashtagContract.readItem(currentItemHash);
+            assert.equal(result[5], "0x0000000000000000000000000000000000000000", "Item cancellation error");
         });
     
         it("should see correct token balance Seeker account", async function () {
@@ -316,11 +337,6 @@ contract('HashtagSimpleDeal', (accounts) => {
         it("should see correct token balance Maintainer account", async function () {
             var balance = await swtToken.balanceOf(maintainer);
             assert.equal(balance.toNumber(), 900000000000000000, "Maintainer balance not correct");
-        });
-
-        it("should set itemStatus on the Item", async function () {
-            var result = await hashtagContract.readDeal(currentItemHash);
-            assert.equal(result[0].toNumber(), 4, "Item creation error");
         });
     });
 
@@ -369,7 +385,7 @@ contract('HashtagSimpleDeal', (accounts) => {
         });
 
         it("should find the Item on the Hashtag", async function () {
-            var result = await hashtagContract.readDeal(currentItemHash);
+            var result = await hashtagContract.readItem(currentItemHash);
             assert.equal(result[2].toNumber(), 30e18, "Item creation error");
         });
 
@@ -377,7 +393,7 @@ contract('HashtagSimpleDeal', (accounts) => {
 
     describe('DisputeItem: Item Funding Stage', function () {
         it("should fund the new Item on the Hashtag contract", async function () {
-            var itemOnContract = await hashtagContract.readDeal(currentItemHash);
+            var itemOnContract = await hashtagContract.readItem(currentItemHash);
             var tempItem = await ipfs.cat(itemOnContract[6]); 
             var itemMetaJson = JSON.parse(tempItem);
             var hashtagContractInstance = await web3.eth.contract(hashtagContract.abi).at(hashtagContract.address);
@@ -408,7 +424,7 @@ contract('HashtagSimpleDeal', (accounts) => {
         });
 
         it("should set provider address on the Item", async function () {
-            var result = await hashtagContract.readDeal(currentItemHash);
+            var result = await hashtagContract.readItem(currentItemHash);
             assert.equal(result[5], provider, "Item creation error");
         });
     });
@@ -421,7 +437,7 @@ contract('HashtagSimpleDeal', (accounts) => {
         });
 
         it("should set itemStatus on the Item", async function () {
-            var result = await hashtagContract.readDeal(currentItemHash);
+            var result = await hashtagContract.readItem(currentItemHash);
             assert.equal(result[0].toNumber(), 2, "Item status error");
         });
     });
@@ -434,7 +450,7 @@ contract('HashtagSimpleDeal', (accounts) => {
         });
 
         it("should set itemStatus on the Item", async function () {
-            var result = await hashtagContract.readDeal(currentItemHash);
+            var result = await hashtagContract.readItem(currentItemHash);
             assert.equal(result[0].toNumber(), 3, "Item status error");
         });
 
