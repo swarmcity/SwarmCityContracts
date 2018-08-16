@@ -70,7 +70,7 @@ contract HashtagList is Ownable {
             _hashtagAddress, 
             false
         );
-        emit HashtagAdded(_hashtagName, _hashtagMetaIPFS, _hashtagAddress);
+        emit HashtagUpdated(_hashtagName, _hashtagMetaIPFS, _hashtagAddress);
     }
 
     function disableHashtag(uint _index) external onlyOwner {
