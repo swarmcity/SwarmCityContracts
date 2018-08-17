@@ -39,7 +39,7 @@ contract HashtagList is Ownable {
             _hashtagName, 
             _hashtagMetaIPFS, 
             _hashtagAddress, 
-            false
+            true
         );
         emit HashtagAdded(_hashtagName, _hashtagMetaIPFS, _hashtagAddress);
     }
@@ -64,16 +64,17 @@ contract HashtagList is Ownable {
 
     function updateHashtag(uint _index, string _hashtagName, string _hashtagMetaIPFS, address _hashtagAddress) external onlyOwner {
         require(_index >= 0 && _index < hashtagListArray.length, "index must be in range");
-        hashtagListArray[_index] = HashtagListItem(
-            _hashtagName, 
-            _hashtagMetaIPFS, 
-            _hashtagAddress, 
-            false
-        );
+        hashtagListArray[_index].hashtagName = _hashtagName;
+        hashtagListArray[_index].hashtagMetaIPFS = _hashtagMetaIPFS;
+        hashtagListArray[_index].hashtagAddress = _hashtagAddress;
         emit HashtagUpdated(_hashtagName, _hashtagMetaIPFS, _hashtagAddress);
     }
 
     function disableHashtag(uint _index) external onlyOwner {
         hashtagListArray[_index].hashtagShown = false;
+    }
+
+    function enableHashtag(uint _index) external onlyOwner {
+        hashtagListArray[_index].hashtagShown = true;
     }
 }
