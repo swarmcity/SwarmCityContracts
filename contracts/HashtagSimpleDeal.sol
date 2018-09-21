@@ -14,23 +14,27 @@ import "./IMiniMeToken.sol";
 import "./RepToken/DetailedERC20.sol";
 
 contract HashtagSimpleDeal is Ownable {
-    /// @param_name The human readable name of the hashtag
-    /// @param_hashtagFee The fixed hashtag fee in SWT
-    /// @param_token The SWT token
-    /// @param_ProviderRep The rep token that is minted for the Provider
-    /// @param_SeekerRep The rep token that is minted for the Seeker
-    /// @param_payoutaddress The address where the hashtag fee is sent.
-    /// @param_metadataHash The IPFS hash metadata for this hashtag
+    /// @param_hashtagName The human readable name of the hashtag
     string public hashtagName;
+    /// @param_hashtagFee The fixed hashtag fee in SWT
     uint public hashtagFee;
+    /// @param_token The SWT token
     IMiniMeToken public token;
+    /// @param_ProviderRep The rep token that is minted for the Provider
     DetailedERC20 public ProviderRep;
+    /// @param_SeekerRep The rep token that is minted for the Seeker
     DetailedERC20 public SeekerRep;
+    /// @param_payoutaddress The address where the hashtag fee is sent.
     address public payoutAddress;
-    string public metadataHash;
-    uint public creationBlock;
+    /// @param_hashtagMetadataHash The IPFS hash metadata for this hashtag
+    /// @dev using bytes32 instead of string, * ref https://ethereum.stackexchange.com/questions/17094/how-to-store-ipfs-hash-using-bytes
+    bytes32 public hashtagMetadataHash;
+    /// @param_deployBlock Set in the constructor. Used to log more efficiently
+    uint public deployBlock;
+    /// @param_itemsHash Array with all items hashes.
+    bytes32[] public itemHashes;
 
-    // @notice itemStatuses enum
+    /// @notice itemStatuses enum
     enum itemStatuses {
 		Open,
         Funded,
@@ -49,7 +53,7 @@ contract HashtagSimpleDeal is Ownable {
         uint replyValue;
         uint providerRep;
         address providerAddress;
-        string ipfsMetadata;
+        bytes32 itemMetadataHash;
     }
 
     /// @param_dealStruct The deal object.
@@ -68,8 +72,8 @@ contract HashtagSimpleDeal is Ownable {
         uint seekerRep;
         address providerAddress;
         address seekerAddress;
-        string ipfsMetadata;
-        uint numberOfReplies;
+        bytes32 itemMetadataHash;
+        bytes32[] replies;
         uint creationBlock;
     }
 
@@ -82,10 +86,10 @@ contract HashtagSimpleDeal is Ownable {
     event ProviderRepAdded(address to, uint amount);
 
     /// @dev Event NewItem - This event is fired when a new item is created
-    event NewItem(address owner, bytes32 itemHash, string ipfsMetadata, uint itemValue, uint hashtagFee, uint seekerRep);
+    event NewItem(address owner, bytes32 itemHash, bytes32 itemMetadataHash, uint itemValue, uint hashtagFee, uint seekerRep);
 
     /// @dev Event ReplyItem - This event is fired when a new reply is added
-    event ReplyItem(bytes32 indexed itemHash, string ipfsMetadata, address provider);
+    event ReplyItem(bytes32 indexed itemHash, bytes32 replyMetadataHash, address provider);
 
     /// @dev ItemStatusChange - This event is fired when an item status is updated
     event ItemChange(bytes32 indexed itemHash, itemStatuses newstatus, address providerAddress);
@@ -97,7 +101,7 @@ contract HashtagSimpleDeal is Ownable {
     event HashtagChanged(string _change);
 
     /// @notice The function that creates the hashtag
-    constructor(address _token, string _hashtagName, uint _hashtagFee, string _ipfsMetadataHash) public {
+    constructor(address _token, string _hashtagName, uint _hashtagFee, bytes32 _hashtagMetadataHash) public {
 
         /// @notice The name of the hashtag is set
         hashtagName = _hashtagName;
@@ -112,7 +116,7 @@ contract HashtagSimpleDeal is Ownable {
         token = IMiniMeToken(_token);
 
         /// Metadata added
-        metadataHash = _ipfsMetadataHash;
+        hashtagMetadataHash = _hashtagMetadataHash;
 
         /// hashtag fee is set to ...
         hashtagFee = _hashtagFee;
@@ -121,31 +125,31 @@ contract HashtagSimpleDeal is Ownable {
         /// First time we set it to msg.sender
         payoutAddress = msg.sender;
 
-        // Set creation block 
-        creationBlock = block.number;
+        /// Set creation block 
+        deployBlock = block.number;
     }
 
     function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData) public {
-        require(address(this).call(_extraData));
-        emit ReceivedApproval( _msgsender,  _amount,  _fromcontract, _extraData);
+        require(address(this).call(_extraData), "Error calling extraData");
+        emit ReceivedApproval(_msgsender, _amount, _fromcontract, _extraData);
     }
 
     /// @notice The Hashtag owner can always update the payout address.
-    function setPayoutAddress(address _payoutaddress) public onlyOwner {
-        payoutAddress = _payoutaddress;
-        emit HashtagChanged("Payout address changed");
+    function setPayoutAddress(address _payoutAddress) public onlyOwner {
+        payoutAddress = _payoutAddress;
+        emit HashtagChanged("payoutAddress changed");
     }
 
     /// @notice The Hashtag owner can always update the metadata for the hashtag.
-    function setMetadataHash(string _ipfsMetadataHash ) public onlyOwner  {
-        metadataHash = _ipfsMetadataHash;
-        emit HashtagChanged("MetaData hash changed");
+    function setMetadataHash(bytes32 _hashtagMetadataHash ) public onlyOwner  {
+        hashtagMetadataHash = _hashtagMetadataHash;
+        emit HashtagChanged("metaDataHash changed");
     }
 
     /// @notice The Hashtag owner can always change the hashtag fee amount
     function setHashtagFee(uint _newHashtagFee) public onlyOwner {
         hashtagFee = _newHashtagFee;
-        emit HashtagChanged("Hashtag fee amount changed");
+        emit HashtagChanged("hashtagFee changed");
     }
 
     /// @notice The item making stuff
@@ -154,51 +158,58 @@ contract HashtagSimpleDeal is Ownable {
     function newItem(
         bytes32 _itemHash, 
         uint _itemValue, 
-        string _ipfsMetadata
+        bytes32 _itemMetadataHash
     ) public {
-        // make sure there is enough to pay the hashtag fee later on
-        require (hashtagFee / 2 <= _itemValue); // Overflow protection
+        /// @dev make sure there is enough to pay the hashtag fee later on
+        require (hashtagFee / 2 <= _itemValue, "Overflow protection: item value");
+        require (_itemValue + hashtagFee / 2 >= _itemValue, "Overflow protection: total value");
 
-        // fund this deal
-        uint totalValue = _itemValue + hashtagFee / 2;
+        /// @dev if deal already exists don't allow to overwrite it
+        require (items[_itemHash].hashtagFee == 0 && items[_itemHash].itemValue == 0, "hashtagFee and itemValue must be 0");
 
-        require ( _itemValue + hashtagFee / 2 >= _itemValue); //overflow protection
+        /// @dev The Seeker transfers SWT to the hashtagcontract
+        require (token.transferFrom(tx.origin,this, _itemValue + hashtagFee / 2), "Error transfering funds to contract");
 
-        // if deal already exists don't allow to overwrite it
-        require (items[_itemHash].hashtagFee == 0 && items[_itemHash].itemValue == 0);
+        /// @dev The Seeker pays half of the hashtagFee to the Maintainer
+        require(token.transfer(payoutAddress, hashtagFee / 2), "");
 
-        // @dev The Seeker transfers SWT to the hashtagcontract
-        require (token.transferFrom(tx.origin,this, _itemValue + hashtagFee / 2));
+        /// @dev if it's funded - fill in the details
+        items[_itemHash] = itemStruct(
+            itemStatuses.Open, // status
+            hashtagFee, // hashtagFee
+            _itemValue, // itemValue
+            0, // providerRep
+            SeekerRep.balanceOf(tx.origin), // seekerRep
+            0x0, // providerAddress
+            tx.origin, // seekerAddress
+            _itemMetadataHash, // itemMetadataHash
+            [], // replies
+            block.number // creationBlock
+        );
 
-        // @dev The Seeker pays half of the hashtagFee to the Maintainer
-        require(token.transfer(payoutAddress, hashtagFee / 2));
+        /// @dev Append itemHash to the itemHashes record
+        itemHashes.push(_itemHash);
 
-        // if it's funded - fill in the details
-        items[_itemHash] = itemStruct(itemStatuses.Open,
-        hashtagFee,
-        _itemValue,
-        0,
-        SeekerRep.balanceOf(tx.origin),
-        0x0,
-        tx.origin,
-        _ipfsMetadata,
-        0,
-        block.number);
-
-        emit NewItem(tx.origin,_itemHash,_ipfsMetadata, _itemValue, hashtagFee, SeekerRep.balanceOf(tx.origin));
+        emit NewItem(
+            tx.origin,
+            _itemHash,
+            _itemMetadataHash,
+            _itemValue,
+            hashtagFee, 
+            SeekerRep.balanceOf(tx.origin)
+        );
     }
 
     /// @notice The reply function
-    function replyItem(bytes32 _itemHash, string _ipfsMetadata) public {
-        itemStruct storage c = items[_itemHash];
-        c.numberOfReplies++;
-        emit ReplyItem(_itemHash, _ipfsMetadata, msg.sender); 
+    function replyItem(bytes32 _itemHash, bytes32 _replyMetadataHash) public {
+        items[_itemHash].replies.push(_replyMetadataHash);
+        emit ReplyItem(_itemHash, _replyMetadataHash, msg.sender);
     }
 
     /// @notice The select function
     function selectReplier(bytes32 _itemHash, address _selectedReplier) public {
         itemStruct storage c = items[_itemHash];
-        require (c.seekerAddress == msg.sender);
+        require (c.seekerAddress == msg.sender, "Sender must be the seeker");
         c.providerAddress = _selectedReplier;
         emit ItemChange(_itemHash, c.status, _selectedReplier);
     }
@@ -209,17 +220,28 @@ contract HashtagSimpleDeal is Ownable {
         itemStruct storage c = items[_itemHash];
 
         /// @dev only allow open deals to be funded
-        require (c.status == itemStatuses.Open);
+        require (c.status == itemStatuses.Open, "Item must be in Open status");
 
         /// @dev if the provider is filled in - the deal was already funded
-        require (c.providerAddress == tx.origin);
+        require (c.providerAddress == tx.origin, "The selected provider must be the sender");
 
         /// @dev put the tokens from the provider on the deal
-        require (c.itemValue + c.hashtagFee / 2 >= c.itemValue);
-        require (token.transferFrom(tx.origin,this,c.itemValue + c.hashtagFee / 2));
+        require (c.itemValue + c.hashtagFee / 2 >= c.itemValue, "Overflow protection: total item value");
 
-        // @dev The Seeker pays half of the hashtagFee to the Maintainer
-        require(token.transfer(payoutAddress, c.hashtagFee / 2));
+        /// @dev The fundItem method is called through a MiniMeToken ApproveAndCall method. 
+        /// The msg.sender approves this contract to spend x amount and the the token transferFrom is called
+        /// If someone exploits tx.origin through another contract the transferFrom would reject because it hasn't been previously authorized
+        require (
+            token.transferFrom(
+                tx.origin,
+                this,
+                c.itemValue + c.hashtagFee / 2
+            ), 
+            "Error transfering tokens to the hashtag"
+        );
+
+        /// @dev The Seeker pays half of the hashtagFee to the Maintainer
+        require(token.transfer(payoutAddress, c.hashtagFee / 2), "Error transfering funds");
 
         /// @dev fill in the address of the provider ( to payout the deal later on )
         items[_itemHash].providerRep = ProviderRep.balanceOf(tx.origin);
@@ -236,13 +258,13 @@ contract HashtagSimpleDeal is Ownable {
         itemStruct storage c = items[_itemHash];
 
         /// @dev Only Seeker can payout
-        require (c.seekerAddress == msg.sender);
+        require (c.seekerAddress == msg.sender, "Sender must be the seeker");
 
         /// @dev you can only payout funded deals
-        require (c.status == itemStatuses.Funded);
+        require (c.status == itemStatuses.Funded, "Item must be in Funded status");
 
         /// @dev pay out the provider
-        require (token.transfer(c.providerAddress,c.itemValue * 2));
+        require (token.transfer(c.providerAddress,c.itemValue * 2), "Error transfering funds to the provider");
 
         /// @dev mint REP for Provider
         ProviderRep.mint(c.providerAddress, 5);
@@ -262,11 +284,9 @@ contract HashtagSimpleDeal is Ownable {
     /// @notice Half of the HashtagFee is sent to PayoutAddress
     function cancelItem(bytes32 _itemHash) public {
         itemStruct storage c = items[_itemHash];
-        if(c.itemValue > 0 && c.providerAddress == 0x0 && c.status == itemStatuses.Open)
-        {
-
-            // @dev The Seeker gets the remaining value
-            require(token.transfer(c.seekerAddress, c.itemValue));
+        if(c.itemValue > 0 && c.providerAddress == 0x0 && c.status == itemStatuses.Open) {
+            /// @dev The Seeker gets the remaining value
+            require(token.transfer(c.seekerAddress, c.itemValue), "Error transfering fund to the seeker");
 
             delete items[_itemHash];
             
@@ -278,15 +298,15 @@ contract HashtagSimpleDeal is Ownable {
     /// @notice The Seeker or Provider can dispute an item, only the Maintainer can resolve it.
     function disputeItem(bytes32 _itemHash) public {
         itemStruct storage c = items[_itemHash];
-        require (c.status == itemStatuses.Funded, 'item not open');
+        require (c.status == itemStatuses.Funded, "Item must be in Funded status");
 
         if (msg.sender == c.seekerAddress) {
             /// @dev Seeker starts the dispute
             /// @dev Only items with Provider set can be disputed
-            require (c.providerAddress != 0x0, 'provider not 0 not open');
+            require (c.providerAddress != 0x0, "provider not 0 not open");
         } else {
             /// @dev Provider starts dispute
-            require (c.providerAddress == msg.sender, 'sender is provider');
+            require (c.providerAddress == msg.sender, "sender is provider");
         }
         /// @dev Set itemStatus to Disputed
         items[_itemHash].status = itemStatuses.Disputed;
@@ -299,19 +319,18 @@ contract HashtagSimpleDeal is Ownable {
     /// @notice The Maintainer resolves the disputed item.
     function resolveItem(bytes32 _itemHash, uint _seekerFraction) public {
         itemStruct storage c = items[_itemHash];
-        require (msg.sender == payoutAddress);
-        require (c.status == itemStatuses.Disputed);
-        require (token.transfer(c.seekerAddress, _seekerFraction));
-        require (c.itemValue * 2 - _seekerFraction <= c.itemValue * 2);
-        require (token.transfer(c.providerAddress, c.itemValue * 2 - _seekerFraction));
+        require (msg.sender == payoutAddress, "Sender must be the hashtag owner");
+        require (c.status == itemStatuses.Disputed, "Item must be in Disputed status");
+        require (token.transfer(c.seekerAddress, _seekerFraction), "Error transfering funds to the seeker");
+        require (c.itemValue * 2 - _seekerFraction <= c.itemValue * 2, "Overflow protection");
+        require (token.transfer(c.providerAddress, c.itemValue * 2 - _seekerFraction), "Error transfering funds to the provider");
         items[_itemHash].status = itemStatuses.Resolved;
 
         emit ItemChange(_itemHash, c.status, c.providerAddress);
     }
 
     /// @notice Read the data details of a deal
-    function readItemData(bytes32 _itemHash)
-        constant public returns (
+    function readItemData(bytes32 _itemHash) public view returns (
             itemStatuses status, 
             address providerAddress,
             uint providerRep,
@@ -325,26 +344,51 @@ contract HashtagSimpleDeal is Ownable {
     }
 
     /// @notice Read the data details of a deal
-    function readItemState(bytes32 _itemHash)
-        constant public returns (
-            uint itemValue,
-            uint seekerRep,
-            uint seekerAddress,
-            string ipfsMetadata,
-            uint creationBlock)
+    function readItemState(bytes32 _itemHash) public view returns (
+            uint _itemValue,
+            uint _seekerRep,
+            address _seekerAddress,
+            bytes32 _itemMetadataHash,
+            uint _creationBlock
+            )
         {
         return (
             items[_itemHash].itemValue,
             items[_itemHash].seekerRep,
             items[_itemHash].seekerAddress,
-            items[_itemHash].ipfsMetadata,
-            items[_itemHash].creationBlock);
+            items[_itemHash].itemMetadataHash,
+            items[_itemHash].creationBlock
+        );
     }
 
     /// @notice Read the details of a deal
-    function readItemIpfsMetadata(bytes32 _itemHash)
-        constant public returns (string ipfsMetadata)
-        {
-        return (items[_itemHash].ipfsMetadata);
+    function readItemMetadataHash(bytes32 _itemHash) public view returns (bytes32 itemMetadataHash) {
+        return (items[_itemHash].itemMetadataHash);
     }
+
+    /// @notice Returns an array of all items' hash in the hashtag
+    /// This array can potentially by really large. This can cause trouble if the array length is > 60.000
+    /// In that case the gas on the eth_call should be increased to a huge number like 2**50
+    /// * ref https://github.com/paritytech/parity-ethereum/issues/6293
+    /// * ref https://ethereum.stackexchange.com/questions/23918/what-is-the-array-size-limit-of-a-returned-array-from-a-contract-function-call-i
+    function getitemHashes() public view returns(bytes32[]) {
+        return itemHashes;
+    }
+
+    function getItemsCount() public view returns(uint) {
+        return itemHashes.length;
+    }
+
+    function getItemRepliesCount(bytes32 _itemHash) public view returns(uint) {
+        return items[_itemHash].replies.length;
+    }
+
+    function getItemReply(bytes32 _itemHash, uint _index) public view returns(bytes32) {
+        return items[_itemHash].replies[_index];
+    }
+
+    function getItemReplies(bytes32 _itemHash, uint _index) public view returns(bytes32[]) {
+        return items[_itemHash].replies;
+    }
+    
 }
