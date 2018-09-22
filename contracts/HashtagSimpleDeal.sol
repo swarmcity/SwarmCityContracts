@@ -173,19 +173,16 @@ contract HashtagSimpleDeal is Ownable {
         /// @dev The Seeker pays half of the hashtagFee to the Maintainer
         require(token.transfer(payoutAddress, hashtagFee / 2), "");
 
-        /// @dev if it's funded - fill in the details
-        items[_itemHash] = itemStruct(
-            itemStatuses.Open, // status
-            hashtagFee, // hashtagFee
-            _itemValue, // itemValue
-            0, // providerRep
-            SeekerRep.balanceOf(tx.origin), // seekerRep
-            0x0, // providerAddress
-            tx.origin, // seekerAddress
-            _itemMetadataHash, // itemMetadataHash
-            [], // replies
-            block.number // creationBlock
-        );
+        /// @dev Initialize item struct
+        itemStruct memory item;
+        item.status = itemStatuses.Open;
+        item.hashtagFee = hashtagFee;
+        item.itemValue = _itemValue;
+        item.seekerRep = SeekerRep.balanceOf(tx.origin);
+        item.seekerAddress = tx.origin;
+        item.itemMetadataHash = _itemMetadataHash;
+        item.creationBlock = block.number;
+        items[_itemHash] = item;
 
         /// @dev Append itemHash to the itemHashes record
         itemHashes.push(_itemHash);
@@ -340,7 +337,7 @@ contract HashtagSimpleDeal is Ownable {
             items[_itemHash].status,
             items[_itemHash].providerAddress,
             items[_itemHash].providerRep,
-            items[_itemHash].numberOfReplies);
+            items[_itemHash].replies.length);
     }
 
     /// @notice Read the data details of a deal
@@ -387,7 +384,7 @@ contract HashtagSimpleDeal is Ownable {
         return items[_itemHash].replies[_index];
     }
 
-    function getItemReplies(bytes32 _itemHash, uint _index) public view returns(bytes32[]) {
+    function getItemReplies(bytes32 _itemHash) public view returns(bytes32[]) {
         return items[_itemHash].replies;
     }
     
