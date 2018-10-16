@@ -74,6 +74,7 @@ contract HashtagSimpleDeal is Ownable {
         address seekerAddress;
         bytes32 itemMetadataHash;
         bytes32[] replies;
+        address[] repliers;
         uint creationBlock;
     }
 
@@ -200,6 +201,7 @@ contract HashtagSimpleDeal is Ownable {
     /// @notice The reply function
     function replyItem(bytes32 _itemHash, bytes32 _replyMetadataHash) public {
         items[_itemHash].replies.push(_replyMetadataHash);
+        items[_itemHash].repliers.push(msg.sender);
         emit ReplyItem(_itemHash, _replyMetadataHash, msg.sender);
     }
 
@@ -386,6 +388,10 @@ contract HashtagSimpleDeal is Ownable {
 
     function getItemReplies(bytes32 _itemHash) public view returns(bytes32[]) {
         return items[_itemHash].replies;
+    }
+
+    function getItemRepliers(bytes32 _itemHash) public view returns(address[]) {
+        return items[_itemHash].repliers;
     }
     
 }
