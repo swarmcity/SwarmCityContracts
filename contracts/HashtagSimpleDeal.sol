@@ -97,6 +97,7 @@ contract HashtagSimpleDeal is Ownable {
 
     /// @dev ReceivedApproval - This event is fired when minime sends approval
     event ReceivedApproval(address sender, uint amount, address fromcontract, bytes extraData);
+    event OnTokenTransfer(address sender, uint256 amount, bytes extraData);
 
     /// @dev hashtagChanged - This event is fired when any of the metadata is changed
     event HashtagChanged(string _change);
@@ -135,6 +136,11 @@ contract HashtagSimpleDeal is Ownable {
         emit ReceivedApproval(_msgsender, _amount, _fromcontract, _extraData);
     }
 
+    function onTokenTransfer(address _msgsender, uint256 _amount, bytes _extraData) public {
+        require(address(this).call(_extraData), "Error calling extraData");
+        emit OnTokenTransfer(_msgsender, _amount, _extraData);
+    }
+
     /// @notice The Hashtag owner can always update the payout address.
     function setPayoutAddress(address _payoutAddress) public onlyOwner {
         payoutAddress = _payoutAddress;
@@ -169,7 +175,8 @@ contract HashtagSimpleDeal is Ownable {
         require (items[_itemHash].hashtagFee == 0 && items[_itemHash].itemValue == 0, "hashtagFee and itemValue must be 0");
 
         /// @dev The Seeker transfers SWT to the hashtagcontract
-        require (token.transferFrom(tx.origin,this, _itemValue + hashtagFee / 2), "Error transfering funds to contract");
+        // // COMMENTED: no longer needed as the transferAndCall function already executed this
+        // require (token.transferFrom(tx.origin, this, _itemValue + hashtagFee / 2), "Error transfering funds to contract");
 
         /// @dev The Seeker pays half of the hashtagFee to the Maintainer
         require(token.transfer(payoutAddress, hashtagFee / 2), "");
@@ -230,14 +237,8 @@ contract HashtagSimpleDeal is Ownable {
         /// @dev The fundItem method is called through a MiniMeToken ApproveAndCall method. 
         /// The msg.sender approves this contract to spend x amount and the the token transferFrom is called
         /// If someone exploits tx.origin through another contract the transferFrom would reject because it hasn't been previously authorized
-        require (
-            token.transferFrom(
-                tx.origin,
-                this,
-                c.itemValue + c.hashtagFee / 2
-            ), 
-            "Error transfering tokens to the hashtag"
-        );
+        // // COMMENTED: no longer needed as the transferAndCall function already executed this
+        // require (token.transferFrom(tx.origin, this, c.itemValue + c.hashtagFee / 2), "Error transfering tokens to the hashtag");
 
         /// @dev The Seeker pays half of the hashtagFee to the Maintainer
         require(token.transfer(payoutAddress, c.hashtagFee / 2), "Error transfering funds");
