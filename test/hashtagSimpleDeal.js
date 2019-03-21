@@ -246,7 +246,7 @@ contract("HashtagSimpleDeal", accounts => {
       );
     });
 
-    it("Provider should reply to the item", async function() {
+    it("Replier should reply to the item", async function() {
       const result = await hashtagSimpleDeal.replyItem(
         itemId,
         replyMetadataHash,
@@ -283,7 +283,40 @@ contract("HashtagSimpleDeal", accounts => {
         "item.replyCount not correct"
       );
     });
+
+  it("Seeker should select the replier as provider", async function() {
+    const result = await hashtagSimpleDeal.selectReplier(
+      itemId,
+      providerAddress,
+      { from: seekerAddress }
+    );
+    gasUsedRegister.selectReplier = result.receipt.gasUsed;
+    txBlockNumber = result.receipt.blockNumber;
+
+    // Check that the NewItem log happened. It needs to be fetched independently
+    // since the result object only contains logs from the `to` address.
+    const events = await hashtagSimpleDeal.getPastEvents(
+      "ItemChange",
+      lastBlock(result)
+    );
+    assert.equal(events.length, 1, "There must be 1 ItemChange event");
+    const changeItem = events[0].returnValues;
+    assert.equal(
+      changeItem.providerAddress,
+      providerAddress,
+      "changeItem.providerAddress must = providerAddress"
+    );
+    // The provider of this item should equal the provider address
+    const item = await hashtagSimpleDeal.getItem(itemId);
+    assert.equal(
+      item._providerAddress,
+      providerAddress,
+      "item._providerAddress not correct"
+    );
   });
+
+});
+
 
   // Print gas used in console to know how expensive is each action
   after(function() {
