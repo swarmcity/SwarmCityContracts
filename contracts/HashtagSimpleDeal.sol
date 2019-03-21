@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity >=0.4.22 <0.6.0;
 
 /**
 *  @title Simple Deal Hashtag
@@ -10,20 +10,23 @@ pragma solidity ^0.4.23;
 *  This contract creates "SimpleDeals".
 */
 
-import "./IMiniMeToken.sol";
-import "./RepToken/DetailedERC20.sol";
+import "./Ownable.sol";
+import "./SafeMath.sol";
+
+contract Erc20Token {
+    function transfer(address _to, uint256 _value) public;
+}
+
 
 contract HashtagSimpleDeal is Ownable {
+    using SafeMath for uint;
+c
     /// @param_hashtagName The human readable name of the hashtag
     string public hashtagName;
     /// @param_hashtagFee The fixed hashtag fee in SWT
     uint public hashtagFee;
     /// @param_token The SWT token
     IMiniMeToken public token;
-    /// @param_ProviderRep The rep token that is minted for the Provider
-    DetailedERC20 public ProviderRep;
-    /// @param_SeekerRep The rep token that is minted for the Seeker
-    DetailedERC20 public SeekerRep;
     /// @param_payoutaddress The address where the hashtag fee is sent.
     address public payoutAddress;
     /// @param_hashtagMetadataHash The IPFS hash metadata for this hashtag
@@ -44,18 +47,6 @@ contract HashtagSimpleDeal is Ownable {
 		Cancelled
     }
 
-    /// @param_replyStruct The reply object.
-    /// @param_replyValue The value of the reply (SWT)
-    /// @param_provider The address of the provider
-	/// @param_deals Array of deals made by this hashtag
-
-    struct replyStruct {
-        uint replyValue;
-        uint providerRep;
-        address providerAddress;
-        bytes32 itemMetadataHash;
-    }
-
     /// @param_dealStruct The deal object.
     /// @param_status Coming from itemStatuses enum.
     /// Statuses: Open, Done, Disputed, Resolved, Cancelled
@@ -65,35 +56,35 @@ contract HashtagSimpleDeal is Ownable {
 	/// @param_deals Array of deals made by this hashtag
 
     struct itemStruct {
-        itemStatuses status;
-        uint hashtagFee;
-        uint itemValue;
-        uint providerRep;
-        uint seekerRep;
+        uint64 status;
+        uint64 replyCount;
+        uint128 creationBlock;
+        uint128 hashtagFee;
+        uint128 itemValue;
         address providerAddress;
         address seekerAddress;
         bytes32 itemMetadataHash;
-        bytes32[] replies;
-        address[] repliers;
-        uint creationBlock;
     }
 
-    mapping(bytes32=>itemStruct) items;
+    itemStruct[] public items;
 
-    /// @dev Event Seeker reputation token is minted and sent
+    mapping(address => uint256) public seekerReputation;
+    mapping(address => uint256) public providerReputation;
+
+    /// @dev Event Seeker reputat[ion token is minted and sent
     event SeekerRepAdded(address to, uint amount);
 
     /// @dev Event Provider reputation token is minted and sent
     event ProviderRepAdded(address to, uint amount);
 
     /// @dev Event NewItem - This event is fired when a new item is created
-    event NewItem(address owner, bytes32 itemHash, bytes32 itemMetadataHash, uint itemValue, uint hashtagFee, uint seekerRep);
+    event NewItem(address indexed owner, uint itemId, uint itemValue, bytes32 itemMetadataHash);
 
     /// @dev Event ReplyItem - This event is fired when a new reply is added
-    event ReplyItem(bytes32 indexed itemHash, bytes32 replyMetadataHash, address provider);
+    event ReplyItem(address indexed replier, uint indexed itemId, bytes32 replyMetadataHash);
 
     /// @dev ItemStatusChange - This event is fired when an item status is updated
-    event ItemChange(bytes32 indexed itemHash, itemStatuses newstatus, address providerAddress);
+    event ItemChange(uint indexed itemId, uint status, address providerAddress);
 
     /// @dev ReceivedApproval - This event is fired when minime sends approval
     event ReceivedApproval(address sender, uint amount, address fromcontract, bytes extraData);
@@ -137,8 +128,16 @@ contract HashtagSimpleDeal is Ownable {
     }
 
     function onTokenTransfer(address _msgsender, uint256 _amount, bytes _extraData) public {
-        require(address(this).call(_extraData), "Error calling extraData");
-        emit OnTokenTransfer(_msgsender, _amount, _extraData);
+        // Make sure that the msg.sender is the token contract
+        require(msg.sender == address(token))
+
+        // Crazy switch aseembly whatever to know what function to call
+        bytes32 _itemMetadataHash = someFunctionWHATEVER(_extraData)
+        uint _itemId = someFunctionWHATEVER(_extraData)
+
+        // If calling newItem
+        newItem(_msgsender, _amount, _itemMetadataHash);
+        fundItem(_msgsender, _amount, _itemId);
     }
 
     /// @notice The Hashtag owner can always update the payout address.
@@ -162,127 +161,92 @@ contract HashtagSimpleDeal is Ownable {
     /// @notice The item making stuff
 
     /// @notice The create item function
-    function newItem(
-        bytes32 _itemHash, 
-        uint _itemValue, 
-        bytes32 _itemMetadataHash
-    ) public {
-        /// @dev make sure there is enough to pay the hashtag fee later on
-        require (hashtagFee / 2 <= _itemValue, "Overflow protection: item value");
-        require (_itemValue + hashtagFee / 2 >= _itemValue, "Overflow protection: total value");
-
-        /// @dev if deal already exists don't allow to overwrite it
-        require (items[_itemHash].hashtagFee == 0 && items[_itemHash].itemValue == 0, "hashtagFee and itemValue must be 0");
-
-        /// @dev The Seeker transfers SWT to the hashtagcontract
-        // // COMMENTED: no longer needed as the transferAndCall function already executed this
-        // require (token.transferFrom(tx.origin, this, _itemValue + hashtagFee / 2), "Error transfering funds to contract");
-
-        /// @dev The Seeker pays half of the hashtagFee to the Maintainer
-        require(token.transfer(payoutAddress, hashtagFee / 2), "");
+    function newItem(address seekerAddress, uint _amount, bytes32 _itemMetadataHash) internal {
+        /// @dev It is assumed that the user sends an amount = itemValue + hashtagFee / 2
+        uint itemValue = _amount.sub(hashtagFee / 2);
 
         /// @dev Initialize item struct
         itemStruct memory item;
-        item.status = itemStatuses.Open;
-        item.hashtagFee = hashtagFee;
-        item.itemValue = _itemValue;
-        item.seekerRep = SeekerRep.balanceOf(tx.origin);
-        item.seekerAddress = tx.origin;
-        item.itemMetadataHash = _itemMetadataHash;
+        // item.status > Initialized latter
+        // item.replyCount > Initialized latter
         item.creationBlock = block.number;
-        items[_itemHash] = item;
-
+        item.hashtagFee = hashtagFee;
+        item.itemValue = itemValue;
+        // item.providerAddress; > Initialized latter
+        item.seekerAddress = seekerAddress;
+        item.itemMetadataHash = _itemMetadataHash;
+        
         /// @dev Append itemHash to the itemHashes record
-        itemHashes.push(_itemHash);
+        uint itemId = items.push(item);
 
-        emit NewItem(
-            tx.origin,
-            _itemHash,
-            _itemMetadataHash,
-            _itemValue,
-            hashtagFee, 
-            SeekerRep.balanceOf(tx.origin)
-        );
+        emit NewItem(seekerAddress, itemId, itemValue, _itemMetadataHash);
     }
 
     /// @notice The reply function
-    function replyItem(bytes32 _itemHash, bytes32 _replyMetadataHash) public {
-        items[_itemHash].replies.push(_replyMetadataHash);
-        items[_itemHash].repliers.push(msg.sender);
-        emit ReplyItem(_itemHash, _replyMetadataHash, msg.sender);
+    function replyItem(uint _itemId, bytes32 _replyMetadataHash) external {
+        items[_itemId].replyCount++;
+        emit ReplyItem(msg.sender, _itemId, _replyMetadataHash);
     }
 
     /// @notice The select function
-    function selectReplier(bytes32 _itemHash, address _selectedReplier) public {
-        itemStruct storage c = items[_itemHash];
-        require (c.seekerAddress == msg.sender, "Sender must be the seeker");
-        c.providerAddress = _selectedReplier;
-        emit ItemChange(_itemHash, c.status, _selectedReplier);
+    function selectReplier(uint _itemId, address _selectedReplier) external {
+        require (items[_itemId].seekerAddress == msg.sender, "Sender must be the seeker");
+        items[_itemId].providerAddress = _selectedReplier;
+        emit ItemChange(_itemId, 0, _selectedReplier);
     }
     /// @dev To deselect, send 0x0 as _selectedReplier
 
     /// @notice Provider has to fund the deal
-    function fundItem(bytes32 _itemHash) public {
-        itemStruct storage c = items[_itemHash];
+    function fundItem(address providerAddress, uint _amount, uint _itemId) internal {
+        itemStruct storage item = items[_itemId];
 
         /// @dev only allow open deals to be funded
-        require (c.status == itemStatuses.Open, "Item must be in Open status");
+        require (item.status == itemStatuses.Open, "Item must be in Open status");
+        /// @dev Update the item state
+        item.status = itemStatuses.Funded;
 
         /// @dev if the provider is filled in - the deal was already funded
-        require (c.providerAddress == tx.origin, "The selected provider must be the sender");
+        require (item.providerAddress == providerAddress, "The selected provider must be the sender");
 
         /// @dev put the tokens from the provider on the deal
-        require (c.itemValue + c.hashtagFee / 2 >= c.itemValue, "Overflow protection: total item value");
-
-        /// @dev The fundItem method is called through a MiniMeToken ApproveAndCall method. 
-        /// The msg.sender approves this contract to spend x amount and the the token transferFrom is called
-        /// If someone exploits tx.origin through another contract the transferFrom would reject because it hasn't been previously authorized
-        // // COMMENTED: no longer needed as the transferAndCall function already executed this
-        // require (token.transferFrom(tx.origin, this, c.itemValue + c.hashtagFee / 2), "Error transfering tokens to the hashtag");
-
-        /// @dev The Seeker pays half of the hashtagFee to the Maintainer
-        require(token.transfer(payoutAddress, c.hashtagFee / 2), "Error transfering funds");
-
-        /// @dev fill in the address of the provider ( to payout the deal later on )
-        items[_itemHash].providerRep = ProviderRep.balanceOf(tx.origin);
+        require (item.itemValue.add(item.hashtagFee / 2) == _amount, "Transfered amount must be itemValue + hashtagFee");
 
         /// @dev you can only fund open deals
-        items[_itemHash].status = itemStatuses.Funded;
         
-        emit ItemChange(_itemHash, c.status, tx.origin);
+        
+        emit ItemChange(_itemId, itemStatuses.Funded, providerAddress);
     }
 
     /// @notice The payout function can only be called by the deal owner.
-    function payoutItem(bytes32 _itemHash) public {
+    function payoutItem(uint _itemId) external {
 
-        itemStruct storage c = items[_itemHash];
+        itemStruct storage item = items[_itemId];
+        address providerAddress = item.providerAddress
 
         /// @dev Only Seeker can payout
-        require (c.seekerAddress == msg.sender, "Sender must be the seeker");
+        require (item.seekerAddress == msg.sender, "Sender must be the seeker");
 
         /// @dev you can only payout funded deals
-        require (c.status == itemStatuses.Funded, "Item must be in Funded status");
+        require (item.status == itemStatuses.Funded, "Item must be in Funded status");
+        /// @dev Update the item state before the token transfers
+        item.status = itemStatuses.Done;
 
+        /// @dev The Seeker pays half of the hashtagFee to the Maintainer
+        require(token.transfer(payoutAddress, item.hashtagFee), "Error transfering hashtagFee to the payout address");
         /// @dev pay out the provider
-        require (token.transfer(c.providerAddress,c.itemValue * 2), "Error transfering funds to the provider");
+        require (token.transfer(providerAddress, item.itemValue * 2), "Error transfering funds to the provider");
 
-        /// @dev mint REP for Provider
-        ProviderRep.mint(c.providerAddress, 5);
-        emit ProviderRepAdded(c.providerAddress, 5);
+        /// @dev mint reputation for the seeker and the provider
+        seekerReputation[msg.sender] = seekerReputation[msg.sender].add(5);
+        providerReputation[providerAddress] = providerReputation[providerAddress].add(5);
 
-        /// @dev mint REP for Seeker
-        SeekerRep.mint(c.seekerAddress, 5);
-        emit SeekerRepAdded(c.seekerAddress, 5);
-
-        /// @dev mark the deal as done
-        items[_itemHash].status = itemStatuses.Done;
-        emit ItemChange(_itemHash, c.status, c.providerAddress);
-
+        /// @dev Emit state change
+        emit ItemChange(_itemHash, itemStatuses.Done, providerAddress);
     }
 
     /// @notice The Cancel Item Function
     /// @notice Half of the HashtagFee is sent to PayoutAddress
-    function cancelItem(bytes32 _itemHash) public {
+    function cancelItem(uint _itemId) public {
         itemStruct storage c = items[_itemHash];
         if(c.itemValue > 0 && c.providerAddress == 0x0 && c.status == itemStatuses.Open) {
             /// @dev The Seeker gets the remaining value
