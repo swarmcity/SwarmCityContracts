@@ -76,7 +76,7 @@ contract HashtagSimpleDeal is Ownable {
     /// @notice Indicates the new `payoutAddress`.
     event PayoutAddressSet(address payoutAddress);
     /// @notice Indicates the new `newHashtagFee`.
-    event HashtagFeeSet(uint newHashtagFee);
+    event HashtagFeeSet(uint hashtagFee);
     /// @notice Indicates the new `hashtagMetadataHash`.
     event MetadataHashSet(bytes32 hashtagMetadataHash);
 
@@ -161,7 +161,7 @@ contract HashtagSimpleDeal is Ownable {
         item.seekerAddress = _seekerAddress;
         item.itemMetadataHash = _itemMetadataHash;
         
-        uint itemId = items.push(item);
+        uint itemId = items.push(item) - 1;
 
         emit NewItem(_seekerAddress, itemId, itemValue, _itemMetadataHash);
     }

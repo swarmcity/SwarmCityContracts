@@ -1,9 +1,9 @@
-pragma solidity 0.4.25;
+pragma solidity >=0.4.22 <0.6.0;
 
 // File: contracts/ERC677Receiver.sol
 
 contract ERC677Receiver {
-  function onTokenTransfer(address _from, uint _value, bytes _data) external returns(bool);
+  function onTokenTransfer(address _from, uint _value, bytes calldata _data) external returns(bool);
 }
 
 // File: openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol
@@ -46,7 +46,7 @@ contract ERC20 is ERC20Basic {
 contract ERC677 is ERC20 {
     event Transfer(address indexed from, address indexed to, uint value, bytes data);
 
-    function transferAndCall(address, uint, bytes) external returns (bool);
+    function transferAndCall(address, uint, bytes calldata) external returns (bool);
 
 }
 
@@ -55,7 +55,7 @@ contract ERC677 is ERC20 {
 contract IBurnableMintableERC677Token is ERC677 {
     function mint(address, uint256) public returns (bool);
     function burn(uint256 _value) public;
-    function claimTokens(address _token, address _to) public;
+    function claimTokens(address _token, address payable _to) public;
 }
 
 // File: contracts/libraries/Version.sol
@@ -211,7 +211,7 @@ contract DetailedERC20 is ERC20 {
   string public symbol;
   uint8 public decimals;
 
-  constructor(string _name, string _symbol, uint8 _decimals) public {
+  constructor(string memory _name, string memory _symbol, uint8 _decimals) public {
     name = _name;
     symbol = _symbol;
     decimals = _decimals;
@@ -472,8 +472,8 @@ contract ERC677BridgeToken is
     Version.Version public getTokenInterfacesVersion = Version.Version(2, 0, 0);
 
     constructor(
-        string _name,
-        string _symbol,
+        string memory _name,
+        string memory _symbol,
         uint8 _decimals)
     public DetailedERC20(_name, _symbol, _decimals) {}
 
@@ -482,7 +482,7 @@ contract ERC677BridgeToken is
         _;
     }
 
-    function transferAndCall(address _to, uint _value, bytes _data)
+    function transferAndCall(address _to, uint _value, bytes calldata _data)
         external validRecipient(_to) returns (bool)
     {
         require(superTransfer(_to, _value));
@@ -508,11 +508,9 @@ contract ERC677BridgeToken is
         return true;
     }
 
-    function contractFallback(address _to, uint _value, bytes _data)
-        private
-        returns(bool)
+    function contractFallback(address _to, uint _value, bytes memory _data) private returns (bool success)
     {
-        return _to.call(abi.encodeWithSignature("onTokenTransfer(address,uint256,bytes)",  msg.sender, _value, _data));
+      (success,) =  _to.call(abi.encodeWithSignature("onTokenTransfer(address,uint256,bytes)",  msg.sender, _value, _data));
     }
 
     function isContract(address _addr)
@@ -533,7 +531,7 @@ contract ERC677BridgeToken is
         revert();
     }
 
-    function claimTokens(address _token, address _to) public onlyOwner {
+    function claimTokens(address _token, address payable _to) public onlyOwner {
         require(_to != address(0));
         if (_token == address(0)) {
             _to.transfer(address(this).balance);
