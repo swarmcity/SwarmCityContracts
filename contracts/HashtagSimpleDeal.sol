@@ -28,6 +28,7 @@ contract HashtagSimpleDeal is Ownable {
     /// @dev using bytes32 instead of string, * ref https://ethereum.stackexchange.com/questions/17094/how-to-store-ipfs-hash-using-bytes
     bytes32 public hashtagMetadataHash;
     uint public deployBlock;
+    uint public constant reputationPerItem = 5;
 
     /// @notice itemStatuses enum
     enum itemStatuses {
@@ -226,8 +227,8 @@ contract HashtagSimpleDeal is Ownable {
         require(token.transfer(providerAddress, item.itemValue * 2), "Transf err - providerAddr");
 
         /// @dev mint reputation for the seeker and the provider
-        seekerReputation[msg.sender] = seekerReputation[msg.sender].add(5);
-        providerReputation[providerAddress] = providerReputation[providerAddress].add(5);
+        seekerReputation[msg.sender] = seekerReputation[msg.sender].add(reputationPerItem);
+        providerReputation[providerAddress] = providerReputation[providerAddress].add(reputationPerItem);
 
         emit ItemChange(_itemId, itemStatuses.Done, providerAddress);
     }
