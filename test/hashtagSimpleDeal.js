@@ -32,12 +32,12 @@ contract("HashtagSimpleDeal", accounts => {
   });
   const toString = res => res.toString();
 
-  before(async function() {
+  before(async function () {
     erc677BridgeToken = await ERC677BridgeToken.deployed();
     hashtagSimpleDeal = await HashtagSimpleDeal.deployed();
   });
 
-  describe("Fund user's accounts by minting", function() {
+  describe("Fund user's accounts by minting", function () {
     it(`Should mint ${balance} to ${accountsToMint.join(", ")}`, async () => {
       for (const address of accountsToMint) {
         await erc677BridgeToken.mint(address, balance);
@@ -50,8 +50,8 @@ contract("HashtagSimpleDeal", accounts => {
     });
   });
 
-  describe("Set contract global variables", function() {
-    it("should set the payoutAddress", async function() {
+  describe("Set contract global variables", function () {
+    it("should set the payoutAddress", async function () {
       const result = await hashtagSimpleDeal.setPayoutAddress(
         maintainerAddress
       );
@@ -72,7 +72,7 @@ contract("HashtagSimpleDeal", accounts => {
       );
     });
 
-    it("should set the hashtagFee", async function() {
+    it("should set the hashtagFee", async function () {
       const result = await hashtagSimpleDeal.setHashtagFee(hashtagFee);
       gasUsedRegister.setHashtagFee = result.receipt.gasUsed;
       const hashtagFeeSet = result.logs.find(
@@ -91,7 +91,7 @@ contract("HashtagSimpleDeal", accounts => {
       );
     });
 
-    it("should set the hashtagMetadataHash", async function() {
+    it("should set the hashtagMetadataHash", async function () {
       const result = await hashtagSimpleDeal.setMetadataHash(
         hashtagMetadataHash
       );
@@ -113,7 +113,7 @@ contract("HashtagSimpleDeal", accounts => {
     });
   });
 
-  describe("Normal item flow", function() {
+  describe("Normal item flow", function () {
     const itemValue = web3.utils.toWei("1");
     const amount = web3.utils
       .toBN(itemValue)
@@ -124,7 +124,7 @@ contract("HashtagSimpleDeal", accounts => {
     let txBlockNumber;
     let itemId;
 
-    it("Seeker should create a new item", async function() {
+    it("Seeker should create a new item", async function () {
       // Cache parameters before transaction
       const seekerBalanceBefore = await erc677BridgeToken
         .balanceOf(seekerAddress)
@@ -188,6 +188,7 @@ contract("HashtagSimpleDeal", accounts => {
         .toBN(seekerBalanceAfter)
         .sub(web3.utils.toBN(seekerBalanceBefore))
         .toString();
+
       const hashtagBalanceDiff = web3.utils
         .toBN(hashtagBalanceAfter)
         .sub(web3.utils.toBN(hashtagBalanceBefore))
@@ -205,7 +206,7 @@ contract("HashtagSimpleDeal", accounts => {
       );
     });
 
-    it("Should query the data of the newly created item", async function() {
+    it("Should query the data of the newly created item", async function () {
       // Get the last item
       const item = await hashtagSimpleDeal.getItem(itemId);
       assert.equal(item._status.toString(), "0", "item.status not correct");
@@ -246,7 +247,7 @@ contract("HashtagSimpleDeal", accounts => {
       );
     });
 
-    it("Replier should reply to the item", async function() {
+    it("Replier should reply to the item", async function () {
       const result = await hashtagSimpleDeal.replyItem(
         itemId,
         replyMetadataHash,
@@ -284,44 +285,159 @@ contract("HashtagSimpleDeal", accounts => {
       );
     });
 
-  it("Seeker should select the replier as provider", async function() {
-    const result = await hashtagSimpleDeal.selectReplier(
-      itemId,
-      providerAddress,
-      { from: seekerAddress }
-    );
-    gasUsedRegister.selectReplier = result.receipt.gasUsed;
-    txBlockNumber = result.receipt.blockNumber;
+    it("Seeker should select the replier as provider", async function () {
+      const result = await hashtagSimpleDeal.selectReplier(
+        itemId,
+        providerAddress,
+        { from: seekerAddress }
+      );
+      gasUsedRegister.selectReplier = result.receipt.gasUsed;
+      txBlockNumber = result.receipt.blockNumber;
 
-    // Check that the NewItem log happened. It needs to be fetched independently
-    // since the result object only contains logs from the `to` address.
-    const events = await hashtagSimpleDeal.getPastEvents(
-      "ItemChange",
-      lastBlock(result)
-    );
-    assert.equal(events.length, 1, "There must be 1 ItemChange event");
-    const changeItem = events[0].returnValues;
-    assert.equal(
-      changeItem.providerAddress,
-      providerAddress,
-      "changeItem.providerAddress must = providerAddress"
-    );
-    // The provider of this item should equal the provider address
-    const item = await hashtagSimpleDeal.getItem(itemId);
-    assert.equal(
-      item._providerAddress,
-      providerAddress,
-      "item._providerAddress not correct"
-    );
-  });
+      // Check that the NewItem log happened. It needs to be fetched independently
+      // since the result object only contains logs from the `to` address.
+      const events = await hashtagSimpleDeal.getPastEvents(
+        "ItemChange",
+        lastBlock(result)
+      );
+      assert.equal(events.length, 1, "There must be 1 ItemChange event");
+      const changeItem = events[0].returnValues;
+      assert.equal(
+        changeItem.providerAddress,
+        providerAddress,
+        "changeItem.providerAddress must = providerAddress"
+      );
+      // The provider of this item should equal the provider address
+      const item = await hashtagSimpleDeal.getItem(itemId);
+      assert.equal(
+        item._providerAddress,
+        providerAddress,
+        "item._providerAddress not correct"
+      );
+    });
 
-});
+    it("Provider should fund the item", async function () {
+      // Cache parameters before transaction
+      const providerBalanceBefore = await erc677BridgeToken
+        .balanceOf(providerAddress)
+        .then(toString);
+      const hashtagBalanceBefore = await erc677BridgeToken
+        .balanceOf(hashtagSimpleDeal.address)
+        .then(toString);
+      const extraData = web3.eth.abi.encodeParameters(
+        ["uint256", "uint256"],
+        ["2", itemId]
+      );
+      const abiData = erc677BridgeToken.contract.methods.transferAndCall(
+        hashtagSimpleDeal.address,
+        amount,
+        extraData
+      ).encodeABI()
+      const result = await erc677BridgeToken.transferAndCall(
+        hashtagSimpleDeal.address,
+        amount,
+        extraData,
+        { from: providerAddress }
+      )
+
+      // Check that the token balance of the hashtagList, seeker and provider is correct
+      const providerBalanceAfter = await erc677BridgeToken
+        .balanceOf(providerAddress)
+        .then(toString);
+
+      const hashtagBalanceAfter = await erc677BridgeToken
+        .balanceOf(hashtagSimpleDeal.address)
+        .then(toString);
+
+      const providerBalanceDiff = web3.utils
+        .toBN(providerBalanceAfter)
+        .sub(web3.utils.toBN(providerBalanceBefore))
+        .toString();
+
+      const hashtagBalanceDiff = web3.utils
+        .toBN(hashtagBalanceAfter)
+        .sub(web3.utils.toBN(hashtagBalanceBefore))
+        .toString();
+
+      assert.equal(
+        hashtagBalanceDiff,
+        amount,
+        "Hashtag balance diff must = amount"
+      );
+      assert.equal(
+        providerBalanceDiff,
+        "-" + amount,
+        "provider balance diff must = - amount"
+      );
+
+      gasUsedRegister.fundItem = result.receipt.gasUsed;
+      txBlockNumber = result.receipt.blockNumber;
+    });
+
+    it("Seeker should payout the item", async function () {
+      // Cache parameters before transaction
+      const providerBalanceBefore = await erc677BridgeToken
+        .balanceOf(providerAddress)
+        .then(toString);
+
+      const hashtagBalanceBefore = await erc677BridgeToken
+        .balanceOf(hashtagSimpleDeal.address)
+        .then(toString);
+
+      const result = await hashtagSimpleDeal.payoutItem(
+        itemId,
+        { from: seekerAddress }
+      );
+      gasUsedRegister.payoutItem = result.receipt.gasUsed;
+      txBlockNumber = result.receipt.blockNumber;
+
+      // Check that the token balance of the hashtagList, seeker and provider is correct
+      const providerBalanceAfter = await erc677BridgeToken
+        .balanceOf(providerAddress)
+        .then(toString);
+
+      const hashtagBalanceAfter = await erc677BridgeToken
+        .balanceOf(hashtagSimpleDeal.address)
+        .then(toString);
+
+      const providerBalanceDiff = web3.utils
+        .toBN(providerBalanceAfter)
+        .sub(web3.utils.toBN(providerBalanceBefore))
+        .toString();
+
+      const hashtagBalanceDiff = web3.utils
+        .toBN(hashtagBalanceAfter)
+        .sub(web3.utils.toBN(hashtagBalanceBefore))
+        .toString();
+
+      const hashtagBalanceLoss = web3.utils
+        .toBN(itemValue).mul(web3.utils.toBN(2))
+        .add(web3.utils.toBN(hashtagFee))
+        .toString();
+
+      const providerGain = web3.utils
+        .toBN(itemValue).mul(web3.utils.toBN(2))
+        .toString();
+
+      assert.equal(
+        providerBalanceDiff,
+        providerGain,
+        "provider balance diff must = amount * 2"
+      );
+
+      assert.equal(
+        hashtagBalanceDiff,
+        "-" + hashtagBalanceLoss,
+        "Hashtag balance diff must = - itemValue * 2 + hashtagFee"
+      );
+    });
 
 
-  // Print gas used in console to know how expensive is each action
-  after(function() {
-    console.log("  Gas cost of each method");
-    console.log("  =======================");
-    console.log(gasUsedRegister);
+    // Print gas used in console to know how expensive is each action
+    after(function () {
+      console.log("  Gas cost of each method");
+      console.log("  =======================");
+      console.log(gasUsedRegister);
+    });
   });
 });

@@ -133,7 +133,7 @@ contract HashtagSimpleDeal is Ownable {
     /// - 0x0000000000000000000000000000000000000000000000000000000000000001: newItem
     /// - 0x0000000000000000000000000000000000000000000000000000000000000002: fundItem
     function onTokenTransfer(address _msgsender, uint256 _amount, bytes memory _extraData) public {
-        require(msg.sender == address(token));
+        require(msg.sender == address(token), "Sender must = token");
         (bytes32 functionSelector, bytes32 itemIdOrMetadata) = abi.decode(_extraData, (bytes32, bytes32));
         if (functionSelector == 0x0000000000000000000000000000000000000000000000000000000000000001) {        
             newItem(_msgsender, _amount, itemIdOrMetadata);
@@ -172,6 +172,7 @@ contract HashtagSimpleDeal is Ownable {
     /// @param _amount Uint amount of tokens transfered = itemValue + hashtagFee / 2
     /// @param _itemId Uint identifying the item.
     function fundItem(address _providerAddress, uint _amount, uint _itemId) internal {
+        require(_itemId < items.length, "itemId must < itemCount");
         itemStruct storage item = items[_itemId];
         require(item.status == uint64(itemStatuses.Open), "Status must = open");
         require(item.providerAddress == _providerAddress, "Sender must = selectee");
