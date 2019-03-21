@@ -14,28 +14,20 @@ import "./Ownable.sol";
 import "./SafeMath.sol";
 
 contract Erc20Token {
-    function transfer(address _to, uint256 _value) public;
+    function transfer(address _to, uint256 _value) public returns (bool);
 }
 
-
 contract HashtagSimpleDeal is Ownable {
-    using SafeMath for uint;
-c
-    /// @param_hashtagName The human readable name of the hashtag
-    string public hashtagName;
-    /// @param_hashtagFee The fixed hashtag fee in SWT
-    uint public hashtagFee;
-    /// @param_token The SWT token
-    IMiniMeToken public token;
-    /// @param_payoutaddress The address where the hashtag fee is sent.
+    using SafeMath256 for uint256;
+    using SafeMath128 for uint128;
+
+    Erc20Token public token;
     address public payoutAddress;
-    /// @param_hashtagMetadataHash The IPFS hash metadata for this hashtag
+    string public hashtagName;
+    uint public hashtagFee;
     /// @dev using bytes32 instead of string, * ref https://ethereum.stackexchange.com/questions/17094/how-to-store-ipfs-hash-using-bytes
     bytes32 public hashtagMetadataHash;
-    /// @param_deployBlock Set in the constructor. Used to log more efficiently
     uint public deployBlock;
-    /// @param_itemsHash Array with all items hashes.
-    bytes32[] public itemHashes;
 
     /// @notice itemStatuses enum
     enum itemStatuses {
@@ -47,316 +39,280 @@ c
 		Cancelled
     }
 
-    /// @param_dealStruct The deal object.
-    /// @param_status Coming from itemStatuses enum.
-    /// Statuses: Open, Done, Disputed, Resolved, Cancelled
-    /// @param_hashtagFee The value of the hashtag fee is stored in the deal. This prevents the hashtagmaintainer to influence an existing deal when changing the hashtag fee.
-    /// @param_dealValue The value of the deal (SWT)
-    /// @param_provider The address of the provider
-	/// @param_deals Array of deals made by this hashtag
-
+    /// @notice Defines the item data
+    /// @param status enum / uint64 defining the item stage
+    /// @param replyCount Helps the user experience to communicate the success interest of an item on the front-end
+    /// @param creationBlock Indicates the creation time + the client can query this item's events from creationBlock to latest
+    /// @param hashtagFee Locks the hashtagFee on creation time. Prevents to hashtag owner alter its reward during an item's activity
+    /// @param itemValue Item value. Uses uint128 for packing, max itemValue = 3.4e20 < SWT total supply
+    /// @param seekerAddress Owner, creator of the item.
+    /// @param providerAddress Buyer, consumer of the item. Must be selected by the seeker and fund the deal afterwards
+    /// @param itemMetadataHash Bytes32 of the IPFS hash describing the item's metadata
     struct itemStruct {
         uint64 status;
         uint64 replyCount;
         uint128 creationBlock;
         uint128 hashtagFee;
         uint128 itemValue;
-        address providerAddress;
         address seekerAddress;
+        address providerAddress;
         bytes32 itemMetadataHash;
     }
 
+    /// @notice An item is identified by `itemId` which is its position on the items array
     itemStruct[] public items;
 
+    /// @notice As the reputation is linked to each contract it does not make sense to store it in a separate ERC20 contract
     mapping(address => uint256) public seekerReputation;
     mapping(address => uint256) public providerReputation;
 
-    /// @dev Event Seeker reputat[ion token is minted and sent
-    event SeekerRepAdded(address to, uint amount);
-
-    /// @dev Event Provider reputation token is minted and sent
-    event ProviderRepAdded(address to, uint amount);
-
-    /// @dev Event NewItem - This event is fired when a new item is created
+    /// @notice Indicates a new item was created. Index by owner = user to get items created by the user
     event NewItem(address indexed owner, uint itemId, uint itemValue, bytes32 itemMetadataHash);
-
-    /// @dev Event ReplyItem - This event is fired when a new reply is added
+    /// @notice Indicates a new reply was logged. Index by replier = user to get items with participation
     event ReplyItem(address indexed replier, uint indexed itemId, bytes32 replyMetadataHash);
+    /// @notice Indicates an item state change. Index by itemId to get the full history of an item's state
+    event ItemChange(uint indexed itemId, itemStatuses status, address providerAddress);
 
-    /// @dev ItemStatusChange - This event is fired when an item status is updated
-    event ItemChange(uint indexed itemId, uint status, address providerAddress);
+    /// @notice Indicates the new `payoutAddress`.
+    event PayoutAddressSet(address payoutAddress);
+    /// @notice Indicates the new `newHashtagFee`.
+    event HashtagFeeSet(uint newHashtagFee);
+    /// @notice Indicates the new `hashtagMetadataHash`.
+    event MetadataHashSet(bytes32 hashtagMetadataHash);
 
-    /// @dev ReceivedApproval - This event is fired when minime sends approval
-    event ReceivedApproval(address sender, uint amount, address fromcontract, bytes extraData);
-    event OnTokenTransfer(address sender, uint256 amount, bytes extraData);
-
-    /// @dev hashtagChanged - This event is fired when any of the metadata is changed
-    event HashtagChanged(string _change);
-
-    /// @notice The function that creates the hashtag
-    constructor(address _token, string _hashtagName, uint _hashtagFee, bytes32 _hashtagMetadataHash) public {
-
-        /// @notice The name of the hashtag is set
+    /// @notice Initializes the basic hashtag parameters
+    /// @param _token Address of the token contract. Only token transfers from this address will be authorized at onTokenTransfer
+    /// @param _hashtagName String name of the hashtag, it is recommended to be short.
+    /// @param _hashtagFee Uint token amount. All seekers and providers must pay this fee on newItem and fundItem respectively
+    /// @param _hashtagMetadataHash Bytes32 of the IPFS hash describing the hashtag's metadata
+    constructor(address _token, string memory _hashtagName, uint _hashtagFee, bytes32 _hashtagMetadataHash) public {
         hashtagName = _hashtagName;
-
-        /// @notice The seeker reputation token is created
-        SeekerRep = new DetailedERC20("SeekerRep", "SWRS", 0);
-
-        /// @notice The provider reputation token is created
-        ProviderRep = new DetailedERC20("ProviderRep", "SWRP", 0);
-
-        /// @notice SWT token is added
-        token = IMiniMeToken(_token);
-
-        /// Metadata added
-        hashtagMetadataHash = _hashtagMetadataHash;
-
-        /// hashtag fee is set to ...
         hashtagFee = _hashtagFee;
-
-        /// Hashtag fee payout address is set
-        /// First time we set it to msg.sender
+        hashtagMetadataHash = _hashtagMetadataHash;
+        token = Erc20Token(_token);
         payoutAddress = msg.sender;
-
-        /// Set creation block 
+        /// @dev Set creation block so the client can query events from deployBlock to latest
         deployBlock = block.number;
     }
 
-    function receiveApproval(address _msgsender, uint _amount, address _fromcontract, bytes _extraData) public {
-        require(address(this).call(_extraData), "Error calling extraData");
-        emit ReceivedApproval(_msgsender, _amount, _fromcontract, _extraData);
-    }
-
-    function onTokenTransfer(address _msgsender, uint256 _amount, bytes _extraData) public {
-        // Make sure that the msg.sender is the token contract
-        require(msg.sender == address(token))
-
-        // Crazy switch aseembly whatever to know what function to call
-        bytes32 _itemMetadataHash = someFunctionWHATEVER(_extraData)
-        uint _itemId = someFunctionWHATEVER(_extraData)
-
-        // If calling newItem
-        newItem(_msgsender, _amount, _itemMetadataHash);
-        fundItem(_msgsender, _amount, _itemId);
-    }
-
-    /// @notice The Hashtag owner can always update the payout address.
-    function setPayoutAddress(address _payoutAddress) public onlyOwner {
+    /// @notice Sets the hashtag mantainer address. 
+    /// This address will be responsible to resolve all items disputes
+    /// All hashtagFees will be payed immidiately to this address
+    /// @param _payoutAddress Address of the new hashtag mantainer
+    function setPayoutAddress(address _payoutAddress) external onlyOwner {
+        require(_payoutAddress != address(0), "Address must not be 0");
         payoutAddress = _payoutAddress;
-        emit HashtagChanged("payoutAddress changed");
+        emit PayoutAddressSet(_payoutAddress);
     }
 
-    /// @notice The Hashtag owner can always update the metadata for the hashtag.
-    function setMetadataHash(bytes32 _hashtagMetadataHash ) public onlyOwner  {
-        hashtagMetadataHash = _hashtagMetadataHash;
-        emit HashtagChanged("metaDataHash changed");
-    }
-
-    /// @notice The Hashtag owner can always change the hashtag fee amount
-    function setHashtagFee(uint _newHashtagFee) public onlyOwner {
+    /// @notice Sets the hashtag fee. It will only affect items created after this transaction 
+    /// @param _newHashtagFee Uint token amount.
+    function setHashtagFee(uint _newHashtagFee) external onlyOwner {
         hashtagFee = _newHashtagFee;
-        emit HashtagChanged("hashtagFee changed");
+        emit HashtagFeeSet(_newHashtagFee);
     }
 
-    /// @notice The item making stuff
+    /// @notice Sets the hashtag metadata hash. 
+    /// @param _hashtagMetadataHash Bytes32 of the IPFS hash describing the hashtag's metadata
+    function setMetadataHash(bytes32 _hashtagMetadataHash) external onlyOwner  {
+        require(_hashtagMetadataHash != 0, "Hash must not be 0");
+        hashtagMetadataHash = _hashtagMetadataHash;
+        emit MetadataHashSet(_hashtagMetadataHash);
+    }
 
-    /// @notice The create item function
-    function newItem(address seekerAddress, uint _amount, bytes32 _itemMetadataHash) internal {
-        /// @dev It is assumed that the user sends an amount = itemValue + hashtagFee / 2
+    /// @notice Token receiver function compatible with ERC677. 
+    /// Can only be called by the token contract, as a result of a token transfer
+    /// It is must trigger an internal call to either newItem or fundItem
+    /// @param _msgsender `msg.sender` of the token transfer to the token contract
+    /// @param _amount Token amount transfered
+    /// @param _extraData Extra data attached to the token transfer
+    /// Acts as a switch to select the internal function and contains the necessary data
+    /// Since both internal methods only have one parameter of static length 32 bytes _extraData must be:
+    /// _extraData = (bytes32 functionSelector, bytes32 itemIdOrMetadata)
+    /// functionSelector must be:
+    /// - 0x0000000000000000000000000000000000000000000000000000000000000001: newItem
+    /// - 0x0000000000000000000000000000000000000000000000000000000000000002: fundItem
+    function onTokenTransfer(address _msgsender, uint256 _amount, bytes memory _extraData) public {
+        require(msg.sender == address(token));
+        (bytes32 functionSelector, bytes32 itemIdOrMetadata) = abi.decode(_extraData, (bytes32, bytes32));
+        if (functionSelector == 0x0000000000000000000000000000000000000000000000000000000000000001) {        
+            newItem(_msgsender, _amount, itemIdOrMetadata);
+        } else if (functionSelector == 0x0000000000000000000000000000000000000000000000000000000000000002) {
+            fundItem(_msgsender, _amount, uint(itemIdOrMetadata));
+        } else {
+            revert("Unknown functionSelector");
+        }    
+    }
+
+    /// @notice Creates a new item, given a token amount and a metadata hash
+    /// @dev Internal function called by onTokenTransfer
+    /// @param _seekerAddress Address that will own this item
+    /// @param _amount Uint amount of tokens transfered = itemValue + hashtagFee / 2
+    /// @param _itemMetadataHash Bytes32 of the IPFS hash describing the item's metadata
+    function newItem(address _seekerAddress, uint _amount, bytes32 _itemMetadataHash) internal {
         uint itemValue = _amount.sub(hashtagFee / 2);
 
-        /// @dev Initialize item struct
+        /// @dev Initialize item struct. 
+        /// @dev Properties: status, replyCount and providerAddress are zero therefore not initialized
         itemStruct memory item;
-        // item.status > Initialized latter
-        // item.replyCount > Initialized latter
-        item.creationBlock = block.number;
-        item.hashtagFee = hashtagFee;
-        item.itemValue = itemValue;
-        // item.providerAddress; > Initialized latter
-        item.seekerAddress = seekerAddress;
+        item.creationBlock = uint128(block.number);
+        item.hashtagFee = uint128(hashtagFee);
+        item.itemValue = uint128(itemValue);
+        item.seekerAddress = _seekerAddress;
         item.itemMetadataHash = _itemMetadataHash;
         
-        /// @dev Append itemHash to the itemHashes record
         uint itemId = items.push(item);
 
-        emit NewItem(seekerAddress, itemId, itemValue, _itemMetadataHash);
+        emit NewItem(_seekerAddress, itemId, itemValue, _itemMetadataHash);
     }
 
-    /// @notice The reply function
+    /// @notice Pre-authorized selectee funds the deal by transfering itemValue + hashtagFee / 2
+    /// @dev Internal function called by onTokenTransfer
+    /// @param _providerAddress Address that will fund the item
+    /// @param _amount Uint amount of tokens transfered = itemValue + hashtagFee / 2
+    /// @param _itemId Uint identifying the item.
+    function fundItem(address _providerAddress, uint _amount, uint _itemId) internal {
+        itemStruct storage item = items[_itemId];
+        require(item.status == uint64(itemStatuses.Open), "Status must = open");
+        require(item.providerAddress == _providerAddress, "Sender must = selectee");
+        require(item.itemValue.add(item.hashtagFee / 2) == _amount, "Amount must = iVal+hFee/2");
+
+        item.status = uint64(itemStatuses.Funded);     
+
+        emit ItemChange(_itemId, itemStatuses.Funded, _providerAddress);
+    }
+
+    /// @notice Logs a reply as an event and increase the reply count of this item.
+    /// @param _itemId Uint identifying the item.
+    /// @param _replyMetadataHash Bytes 32 of the UPFS hash describing the reply's metadata
     function replyItem(uint _itemId, bytes32 _replyMetadataHash) external {
         items[_itemId].replyCount++;
+
         emit ReplyItem(msg.sender, _itemId, _replyMetadataHash);
     }
 
-    /// @notice The select function
+    /// @notice Item's owner authorizes one address to fund the deal latter
+    /// @notice To unselect, call this method with the zero address: selectReplier(itemId, address(0))
+    /// @param _itemId Uint identifying the item.
+    /// @param _selectedReplier Address of the authorized potential fund-ee
     function selectReplier(uint _itemId, address _selectedReplier) external {
-        require (items[_itemId].seekerAddress == msg.sender, "Sender must be the seeker");
-        items[_itemId].providerAddress = _selectedReplier;
-        emit ItemChange(_itemId, 0, _selectedReplier);
-    }
-    /// @dev To deselect, send 0x0 as _selectedReplier
-
-    /// @notice Provider has to fund the deal
-    function fundItem(address providerAddress, uint _amount, uint _itemId) internal {
         itemStruct storage item = items[_itemId];
-
-        /// @dev only allow open deals to be funded
-        require (item.status == itemStatuses.Open, "Item must be in Open status");
-        /// @dev Update the item state
-        item.status = itemStatuses.Funded;
-
-        /// @dev if the provider is filled in - the deal was already funded
-        require (item.providerAddress == providerAddress, "The selected provider must be the sender");
-
-        /// @dev put the tokens from the provider on the deal
-        require (item.itemValue.add(item.hashtagFee / 2) == _amount, "Transfered amount must be itemValue + hashtagFee");
-
-        /// @dev you can only fund open deals
+        require(item.status == uint64(itemStatuses.Open), "Status must = open");
+        require(item.seekerAddress == msg.sender, "Sender must = seeker");
         
-        
-        emit ItemChange(_itemId, itemStatuses.Funded, providerAddress);
+        item.providerAddress = _selectedReplier;
+
+        emit ItemChange(_itemId, itemStatuses.Open, _selectedReplier);
     }
 
-    /// @notice The payout function can only be called by the deal owner.
+    /// @notice The seeker or the provider dispute the item as a result of a problem states that the item was completed successfully.
+    /// Transfers itemValue * 2 (provider's deposit + seeker pay) to the provider
+    /// Transfers hashtagFee to the hashtag mantainer
+    /// Mints reputation for the seeker and the provider
+    /// @param _itemId Uint identifying the item.
     function payoutItem(uint _itemId) external {
-
         itemStruct storage item = items[_itemId];
-        address providerAddress = item.providerAddress
+        require(item.status == uint64(itemStatuses.Funded), "Status must = funded");
+        require(item.seekerAddress == msg.sender, "Sender must = seeker");
 
-        /// @dev Only Seeker can payout
-        require (item.seekerAddress == msg.sender, "Sender must be the seeker");
+        /// @dev Cache the providerAddress in memory to save gas on SLOADs
+        address providerAddress = item.providerAddress;
+        
+        /// @dev Update item state before token transfers
+        item.status = uint64(itemStatuses.Done);
 
-        /// @dev you can only payout funded deals
-        require (item.status == itemStatuses.Funded, "Item must be in Funded status");
-        /// @dev Update the item state before the token transfers
-        item.status = itemStatuses.Done;
-
-        /// @dev The Seeker pays half of the hashtagFee to the Maintainer
-        require(token.transfer(payoutAddress, item.hashtagFee), "Error transfering hashtagFee to the payout address");
-        /// @dev pay out the provider
-        require (token.transfer(providerAddress, item.itemValue * 2), "Error transfering funds to the provider");
+        require(token.transfer(payoutAddress, item.hashtagFee), "Transf err - payoutAddr");
+        require(token.transfer(providerAddress, item.itemValue * 2), "Transf err - providerAddr");
 
         /// @dev mint reputation for the seeker and the provider
         seekerReputation[msg.sender] = seekerReputation[msg.sender].add(5);
         providerReputation[providerAddress] = providerReputation[providerAddress].add(5);
 
-        /// @dev Emit state change
-        emit ItemChange(_itemHash, itemStatuses.Done, providerAddress);
+        emit ItemChange(_itemId, itemStatuses.Done, providerAddress);
     }
 
-    /// @notice The Cancel Item Function
-    /// @notice Half of the HashtagFee is sent to PayoutAddress
-    function cancelItem(uint _itemId) public {
-        itemStruct storage c = items[_itemHash];
-        if(c.itemValue > 0 && c.providerAddress == 0x0 && c.status == itemStatuses.Open) {
-            /// @dev The Seeker gets the remaining value
-            require(token.transfer(c.seekerAddress, c.itemValue), "Error transfering fund to the seeker");
+    /// @notice The seeker or the provider dispute the item as a result of a problem cancels the item before it getting funded. 
+    /// Transfers itemValue (seeker's pay) to the seeker.
+    /// Transfers hashtagFee / 2 to the hashtag mantainer.
+    /// @param _itemId Uint identifying the item.
+    function cancelItem(uint _itemId) external {
+        itemStruct storage item = items[_itemId];
+        require(item.status == uint64(itemStatuses.Open), "Status must = open");
+        require(item.seekerAddress == msg.sender, "Sender must = seeker");
 
-            delete items[_itemHash];
-            
-            emit ItemChange(_itemHash, c.status, c.providerAddress);
-        }
-    }
+        /// @dev Update item state before token transfer
+        item.status = uint64(itemStatuses.Cancelled);
 
-    /// @notice The Dispute Item Function
-    /// @notice The Seeker or Provider can dispute an item, only the Maintainer can resolve it.
-    function disputeItem(bytes32 _itemHash) public {
-        itemStruct storage c = items[_itemHash];
-        require (c.status == itemStatuses.Funded, "Item must be in Funded status");
+        require(token.transfer(payoutAddress, item.hashtagFee / 2), "Transf err - payoutAddr");
+        require(token.transfer(msg.sender, item.itemValue), "Transf err - seekerAddr");
 
-        if (msg.sender == c.seekerAddress) {
-            /// @dev Seeker starts the dispute
-            /// @dev Only items with Provider set can be disputed
-            require (c.providerAddress != 0x0, "provider not 0 not open");
-        } else {
-            /// @dev Provider starts dispute
-            require (c.providerAddress == msg.sender, "sender is provider");
-        }
-        /// @dev Set itemStatus to Disputed
-        items[_itemHash].status = itemStatuses.Disputed;
-        
-        emit ItemChange(_itemHash, c.status, c.providerAddress);
-
-    } 
-
-    /// @notice The Resolve Item Function ♡
-    /// @notice The Maintainer resolves the disputed item.
-    function resolveItem(bytes32 _itemHash, uint _seekerFraction) public {
-        itemStruct storage c = items[_itemHash];
-        require (msg.sender == payoutAddress, "Sender must be the hashtag owner");
-        require (c.status == itemStatuses.Disputed, "Item must be in Disputed status");
-        require (token.transfer(c.seekerAddress, _seekerFraction), "Error transfering funds to the seeker");
-        require (c.itemValue * 2 - _seekerFraction <= c.itemValue * 2, "Overflow protection");
-        require (token.transfer(c.providerAddress, c.itemValue * 2 - _seekerFraction), "Error transfering funds to the provider");
-        items[_itemHash].status = itemStatuses.Resolved;
-
-        emit ItemChange(_itemHash, c.status, c.providerAddress);
-    }
-
-    /// @notice Read the data details of a deal
-    function readItemData(bytes32 _itemHash) public view returns (
-            itemStatuses status, 
-            address providerAddress,
-            uint providerRep,
-            uint numberOfReplies)
-        {
-        return (
-            items[_itemHash].status,
-            items[_itemHash].providerAddress,
-            items[_itemHash].providerRep,
-            items[_itemHash].replies.length);
-    }
-
-    /// @notice Read the data details of a deal
-    function readItemState(bytes32 _itemHash) public view returns (
-            uint _itemValue,
-            uint _seekerRep,
-            address _seekerAddress,
-            bytes32 _itemMetadataHash,
-            uint _creationBlock
-            )
-        {
-        return (
-            items[_itemHash].itemValue,
-            items[_itemHash].seekerRep,
-            items[_itemHash].seekerAddress,
-            items[_itemHash].itemMetadataHash,
-            items[_itemHash].creationBlock
-        );
-    }
-
-    /// @notice Read the details of a deal
-    function readItemMetadataHash(bytes32 _itemHash) public view returns (bytes32 itemMetadataHash) {
-        return (items[_itemHash].itemMetadataHash);
-    }
-
-    /// @notice Returns an array of all items' hash in the hashtag
-    /// This array can potentially by really large. This can cause trouble if the array length is > 60.000
-    /// In that case the gas on the eth_call should be increased to a huge number like 2**50
-    /// * ref https://github.com/paritytech/parity-ethereum/issues/6293
-    /// * ref https://ethereum.stackexchange.com/questions/23918/what-is-the-array-size-limit-of-a-returned-array-from-a-contract-function-call-i
-    function getitemHashes() public view returns(bytes32[]) {
-        return itemHashes;
-    }
-
-    function getItemsCount() public view returns(uint) {
-        return itemHashes.length;
-    }
-
-    function getItemRepliesCount(bytes32 _itemHash) public view returns(uint) {
-        return items[_itemHash].replies.length;
-    }
-
-    function getItemReply(bytes32 _itemHash, uint _index) public view returns(bytes32) {
-        return items[_itemHash].replies[_index];
-    }
-
-    function getItemReplies(bytes32 _itemHash) public view returns(bytes32[]) {
-        return items[_itemHash].replies;
-    }
-
-    function getItemRepliers(bytes32 _itemHash) public view returns(address[]) {
-        return items[_itemHash].repliers;
+        emit ItemChange(_itemId, itemStatuses.Cancelled, item.providerAddress);
     }
     
+    /// @notice The seeker or the provider dispute the item as a result of a problem. 
+    /// The item will remain frozen until the hashtag mantainer resolves the dispute.
+    /// The resolution criteria should be based on off-chain communications with both parties.
+    /// @param _itemId Uint identifying the item.
+    function disputeItem(uint _itemId) external {
+        itemStruct storage item = items[_itemId];
+        require(item.status == uint64(itemStatuses.Funded), "Status must = funded");
+        require(msg.sender == item.seekerAddress || msg.sender == item.providerAddress, "Sender must = seekr or providr");
+
+        item.status = uint64(itemStatuses.Disputed);
+
+        emit ItemChange(_itemId, itemStatuses.Disputed, item.providerAddress);
+    } 
+
+    /// @notice The hashtag mantainer resolves a disputed item. 
+    /// The resolution includes how many funds go to the seeker and to the provider
+    /// The resolution criteria should be based on off-chain communications with both parties.
+    /// @param _itemId Uint identifying the item.
+    /// @param _seekerFraction Uint token amount to be transfered to the seeker, must _seekerFraction <= itemValue * 2
+    function resolveItem(uint _itemId, uint _seekerFraction) external {
+        itemStruct storage item = items[_itemId];
+        require(msg.sender == payoutAddress, "Sender must = mantainer");
+        require(item.status == uint64(itemStatuses.Disputed), "Status must = disputed");
+        require(_seekerFraction <= item.itemValue * 2, "seekrfrac must <= iVal*2");
+
+        /// @dev Update item state before token transfer
+        item.status = uint64(itemStatuses.Resolved);
+
+        require(token.transfer(item.seekerAddress, _seekerFraction), "Transf err - seekerAddr");
+        /// @dev No need to use SafeMath below because _seekerFraction <= item.itemValue * 2 is enforced above
+        require(token.transfer(item.providerAddress, item.itemValue * 2 - _seekerFraction), "Transf err - providerAddr");
+
+        emit ItemChange(_itemId, itemStatuses.Resolved, item.providerAddress);
+    }
+
+    /// @notice Client data fetching process
+    /// Hashtag display: List all items basic metadata + know which items is the user involved
+    /// Hashtag: payoutAddress, hashtagName, hashtagMetadataHash, deployBlock, (hashtagFee)
+    /// Per item: status, replyCount, creationBlock, itemValue, seekerAddress, providerAddress, (hashtagFee), itemMetadataHash + Am I a replier?
+    /// Step 1: Query all hashtag data + getItemsCount()
+    /// Step 2A: Get n items: batch request to items(i) from i=itemsCount-n to i=itemsCount
+    /// Step 2B: Get all past ReplyItem events indexed with replier = user, to know which items contain a reply by the user
+    /// Step 3: Resolve all metadata hashes 
+
+    /// @notice Get the items count
+    /// @return Items array length
+    function getItemCount() public view returns(uint) {
+        return items.length;
+    }
+
+    /// @notice Query a single item 
+    /// @param _itemId Uint identifying the item.
+    /// @return item struct as a tuple
+    function getItem(uint _itemId) public view returns(
+        uint64 _status,
+        uint64 _replyCount,
+        uint128 _creationBlock,
+        uint128 _hashtagFee,
+        uint128 _itemValue,
+        address _seekerAddress,
+        address _providerAddress,
+        bytes32 _itemMetadataHash
+    ) {
+        itemStruct storage item = items[_itemId];
+        return (item.status, item.replyCount, item.creationBlock, item.hashtagFee, item.itemValue, item.seekerAddress, item.providerAddress, item.itemMetadataHash);
+    }
 }
