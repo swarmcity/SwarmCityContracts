@@ -131,14 +131,14 @@ contract HashtagSimpleDeal is Ownable {
     /// Since both internal methods only have one parameter of static length 32 bytes _extraData must be:
     /// _extraData = (bytes32 functionSelector, bytes32 itemIdOrMetadata)
     /// functionSelector must be:
-    /// - 0x0000000000000000000000000000000000000000000000000000000000000001: newItem
-    /// - 0x0000000000000000000000000000000000000000000000000000000000000002: fundItem
+    /// - 1: newItem
+    /// - 2: fundItem
     function onTokenTransfer(address _msgsender, uint256 _amount, bytes memory _extraData) public {
         require(msg.sender == address(token), "Sender must = token");
-        (bytes32 functionSelector, bytes32 itemIdOrMetadata) = abi.decode(_extraData, (bytes32, bytes32));
-        if (functionSelector == 0x0000000000000000000000000000000000000000000000000000000000000001) {        
+        (uint functionSelector, bytes32 itemIdOrMetadata) = abi.decode(_extraData, (uint, bytes32));
+        if (functionSelector == 1) {        
             newItem(_msgsender, _amount, itemIdOrMetadata);
-        } else if (functionSelector == 0x0000000000000000000000000000000000000000000000000000000000000002) {
+        } else if (functionSelector == 2) {
             fundItem(_msgsender, _amount, uint(itemIdOrMetadata));
         } else {
             revert("Unknown functionSelector");
