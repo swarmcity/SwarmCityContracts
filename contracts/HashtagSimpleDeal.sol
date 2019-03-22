@@ -278,6 +278,8 @@ contract HashtagSimpleDeal is Ownable {
 
         /// @dev Update item state before token transfer
         item.status = uint64(itemStatuses.Resolved);
+        
+        require(token.transfer(payoutAddress, item.hashtagFee), "Transf err - payoutAddr");
 
         require(token.transfer(item.seekerAddress, _seekerFraction), "Transf err - seekerAddr");
         /// @dev No need to use SafeMath below because _seekerFraction <= item.itemValue * 2 is enforced above
