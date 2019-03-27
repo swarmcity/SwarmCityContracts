@@ -1,0 +1,21 @@
+module.exports = [
+  "bagel",
+  "bread",
+  "cereal",
+  "cheese",
+  "croissant",
+  "egg",
+  "fish",
+  "ketchup",
+  "mayonnaise",
+  "noodles",
+  "pancakes",
+  "pasta",
+  "peanuts",
+  "rice",
+  "roll",
+  "salad",
+  "sandwich",
+  "shrimp",
+  "toast"
+];

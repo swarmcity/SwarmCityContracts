@@ -11,17 +11,15 @@ const hashtagFee = 1000000000;
 const hashtagMetadataHash = "0xab12351253515235";
 
 module.exports = function(deployer) {
-  deployer
-    .deploy(ERC677BridgeToken, tokenName, tokenSymbol, decimals)
-    .then(function() {
-      return deployer.deploy(
-        HashtagSimpleDeal,
-        ERC677BridgeToken.address,
-        hashtagName,
-        hashtagFee,
-        hashtagMetadataHash
-      );
-    });
-
-  deployer.deploy(HashtagList);
+  deployer.then(async () => {
+    await deployer.deploy(ERC677BridgeToken, tokenName, tokenSymbol, decimals);
+    await deployer.deploy(
+      HashtagSimpleDeal,
+      ERC677BridgeToken.address,
+      hashtagName,
+      hashtagFee,
+      hashtagMetadataHash
+    );
+    await deployer.deploy(HashtagList);
+  });
 };
