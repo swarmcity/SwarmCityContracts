@@ -1,5 +1,6 @@
 const HashtagSimpleDeal = artifacts.require("HashtagSimpleDeal");
 const ERC677BridgeToken = artifacts.require("ERC677BridgeToken");
+const HashtagList = artifacts.require("HashtagList");
 
 const tokenName = "Swarm City Token Bridged";
 const tokenSymbol = "SWTTEST";
@@ -21,4 +22,6 @@ module.exports = function(deployer) {
         hashtagMetadataHash
       );
     });
+
+  deployer.deploy(HashtagList);
 };

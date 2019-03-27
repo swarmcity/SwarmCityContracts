@@ -574,10 +574,23 @@ contract("HashtagSimpleDeal", accounts => {
     });
   });
 
+  // Information retrieval test
+  describe("Contract state retrieval", () => {
+    it("Should get the past items and their state", async () => {
+      const itemCount = await hashtagSimpleDeal.getItemCount();
+      console.log({ itemCount });
+      for (let i = 0; i < itemCount; i++) {
+        const item = await hashtagSimpleDeal.getItem(i);
+        console.log(item);
+      }
+    });
+  });
+
   // Print gas used in console to know how expensive is each action
   after(function() {
     console.log("  Gas cost of each method");
     console.log("  =======================");
     console.log(gasUsedRegister);
+    console.log({ hashtagSimpleDealAddress: hashtagSimpleDeal.address });
   });
 });

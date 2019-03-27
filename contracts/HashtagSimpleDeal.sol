@@ -30,7 +30,7 @@ contract HashtagSimpleDeal is Ownable {
     uint public deployBlock;
     uint public constant reputationPerItem = 5;
 
-    /// @notice itemStatuses enum
+    /// @notice itemStatuses enum. Style standards recommend capitalization
     enum itemStatuses {
 		Open,
         Funded,
