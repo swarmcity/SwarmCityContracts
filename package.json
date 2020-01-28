@@ -10,7 +10,9 @@
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "solcpiler": "solcpiler --solc-version v0.4.23+commit.124ca40d -i ./contracts/HashtagSimpleDeal.sol && solcpiler --solc-version v0.4.23+commit.124ca40d -i ./contracts/MiniMeToken/MiniMeToken.sol && solcpiler --solc-version v0.4.23+commit.124ca40d -i ./contracts/HashtagProxy/HashtagProxy.sol",
-    "browserify": "browserify utility.js --standalone utility > gs-client/utility.js && browserify node_modules/keythereum/index.js --standalone keythereum > gs-client/keythereum.js"
+    "browserify": "browserify utility.js --standalone utility > gs-client/utility.js && browserify node_modules/keythereum/index.js --standalone keythereum > gs-client/keythereum.js",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -40,7 +42,9 @@
     "memory-cache": "^0.2.0",
     "nano-ipfs-store": "^0.1.3",
     "request": "^2.72.0",
-    "web3": "1.0.0-beta.29"
+    "web3": "1.0.0-beta.29",
+    "snyk": "^1.283.0"
   },
-  "homepage": "https://github.com/swarmcity/sc-gasstation#readme"
+  "homepage": "https://github.com/swarmcity/sc-gasstation#readme",
+  "snyk": true
 }
