@@ -1,0 +1,615 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.14.1
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  SNYK-JS-LODASH-567746:
+    - ipfs > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > @nodeutils/defaults-deep > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld-dag-cbor > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld-dag-pb > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-bitswap > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-http-response > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-repo > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-floodsub > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-circuit > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-bootstrap > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-keychain > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-mdns > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-mplex > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-secio > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-webrtc-star > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-tcp > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-circuit > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-info > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-book > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-repo > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > ipld-dag-cbor > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipld-dag-cbor > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > ipld-dag-pb > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipld-dag-pb > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld-dag-pb > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-circuit > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-book > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-repo > lock-me > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipfs-repo > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipld-bitcoin > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipld-ethereum > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipld-git > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipld-zcash > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-repo > datastore-core > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-repo > datastore-fs > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-floodsub > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-keychain > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-floodsub > libp2p-pubsub > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-floodsub > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-circuit > multistream-select > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-bootstrap > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-mdns > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-secio > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-webrtc-star > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-keychain > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > libp2p-record > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-secio > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-circuit > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-info > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-repo > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > joi-multiaddr > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-tcp > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > peer-info > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-circuit > peer-info > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-book > peer-info > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-info > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > peer-info > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-secio > peer-info > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > peer-info > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-book > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-connection-manager > latency-monitor > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-repo > datastore-core > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-repo > datastore-fs > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-repo > datastore-level > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipld-dag-cbor > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipld-dag-pb > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld-dag-pb > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-secio > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-circuit > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-book > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-circuit > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-book > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-secio > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-book > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipfs-repo > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipfs-repo > datastore-core > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipfs-repo > datastore-fs > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipfs-repo > lock-me > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipfs-repo > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipld-bitcoin > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipld-ethereum > ethereumjs-block > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipld-ethereum > merkle-patricia-tree > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipld-ethereum > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipld-git > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipld-zcash > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-repo > datastore-fs > datastore-core > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-repo > datastore-level > datastore-core > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-floodsub > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-keychain > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-floodsub > libp2p-pubsub > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-floodsub > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-ping > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-bootstrap > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-mdns > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-secio > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-webrtc-star > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-floodsub > libp2p-pubsub > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > multistream-select > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-circuit > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-bootstrap > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-mdns > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-webrtc-star > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > peer-info > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-circuit > peer-info > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-book > peer-info > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-info > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > peer-info > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-secio > peer-info > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > peer-info > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipfs-repo > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-circuit > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > peer-info > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-book > peer-info > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-repo > datastore-fs > datastore-core > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-repo > datastore-level > datastore-core > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipld-dag-cbor > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipld-dag-pb > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-circuit > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-book > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-circuit > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-info > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-book > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-circuit > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-circuit > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-book > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-secio > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-book > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-book > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipfs-repo > datastore-core > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipfs-repo > datastore-fs > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipfs-repo > datastore-level > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipfs-repo > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipfs-repo > datastore-fs > datastore-core > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipfs-repo > datastore-level > datastore-core > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-core > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-fs > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipfs-repo > lock-me > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipfs-repo > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipld-bitcoin > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipld-ethereum > ethereumjs-block > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipld-ethereum > merkle-patricia-tree > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipld-ethereum > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipld-git > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipld-zcash > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-floodsub > libp2p-pubsub > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-floodsub > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-ping > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-bootstrap > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-mdns > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-secio > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-webrtc-star > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-floodsub > libp2p-pubsub > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-bootstrap > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-mdns > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-webrtc-star > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-circuit > multistream-select > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-identify > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-circuit > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > peer-info > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-book > peer-info > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipfs-repo > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-circuit > peer-info > peer-id > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-circuit > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-book > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-secio > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-book > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-api > peer-info > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-circuit > peer-info > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > peer-book > peer-info > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-info > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-kad-dht > peer-info > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-secio > peer-info > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-websocket-star > peer-info > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-book > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-circuit > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-book > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-circuit > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipfs-repo > datastore-fs > datastore-core > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipld > ipfs-repo > datastore-level > datastore-core > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-core > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-fs > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-level > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipfs-repo > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-fs > datastore-core > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-level > datastore-core > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-core > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-fs > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipfs-repo > lock-me > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipld-ethereum > ethereumjs-block > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipld-ethereum > merkle-patricia-tree > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-floodsub > libp2p-pubsub > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-bootstrap > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-mdns > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p-webrtc-star > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-identify > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-identify > peer-info > peer-id > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-circuit > peer-info > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipfs-repo > multiaddr > ip-address > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-circuit > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-book > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-circuit > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > peer-info > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > peer-book > peer-info > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-circuit > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-fs > datastore-core > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-level > datastore-core > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-core > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-fs > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-level > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-fs > datastore-core > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-level > datastore-core > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-identify > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-identify > peer-info > peer-id > libp2p-crypto > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-circuit > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-circuit > peer-info > peer-id > libp2p-crypto > multihashing-async > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-fs > datastore-core > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipfs-repo > datastore-level > datastore-core > interface-datastore > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > libp2p > libp2p-switch > libp2p-identify > peer-info > peer-id > libp2p-crypto > libp2p-crypto-secp256k1 > async > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+  'npm:lodash:20180130':
+    - ipfs > ipld > ipld-zcash > zcash-bitcore-lib > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-unixfs-engine > ipld > ipld-zcash > zcash-bitcore-lib > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
+    - ipfs > ipfs-mfs > ipfs-unixfs-engine > ipld > ipld-zcash > zcash-bitcore-lib > lodash:
+        patched: '2020-05-18T03:46:46.039Z'
