@@ -27,7 +27,7 @@
     "body-parser": "^1.17.2",
     "cors": "^2.7.1",
     "dotenv": "^4.0.0",
-    "eth-crypto": "^1.2.2",
+    "eth-crypto": "^2.0.0",
     "eth-lightwallet": "git+https://github.com/BlockTube/eth-lightwallet.git",
     "ethereumjs-tx": "1.1.1",
     "ethereumjs-util": "^4.5.0",
